@@ -1,18 +1,19 @@
 require "gtk3"
-require "sys/filesystem"
-require "./file_actions"
- 
+require "filemagic"
+
 class FileManager
   INDEX = 0
   COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
    
   def initialize
-    @fileactions_obj = FileActions.new
     @parent = "#{ENV['HOME']}"
     @curr_dir = @parent
     @route = Array.new
     @file_path_entry = Gtk::Entry.new
     @file_path_entry.editable = false
+    icon_theme = Gtk::IconTheme.default
+    @icon_list = icon_theme.icons
+    @icon_theme = Gtk::IconTheme.default
     set_adress_line()
     @color=Gdk::RGBA::new(18,89,199,0.2)
     win = Gtk::Window.new
@@ -28,18 +29,19 @@ class FileManager
     toolbar_hbox.pack_start(@file_path_entry, :expand => true, :fill => true, :padding => 0)
     
     main_vbox.pack_start(menus, :expand => false, :fill => false, :padding => 2)
-    main_vbox.pack_start(toolbar_hbox, :expand => true, :fill => true, :padding => 2)
+    main_vbox.pack_start(toolbar_hbox, :expand => false, :fill => true, :padding => 2)
     main_vbox.pack_start(swin_vpaned, :expand => true, :fill => true, :padding => 1)
     treeview_vbox = Gtk::Box.new(:vertical, 1)
     create_devices_treeview()
     treeview_vbox.pack_start(@devices_treeview, :expand => false, :fill => false, :padding => 2)
     create_places_treeview
     
+    main_vbox.homogeneous=false
+    toolbar_hbox.homogeneous=false
     treeview_vbox.pack_start(@places_treeview)
     swin_vpaned.pack1(treeview_vbox, :resize => true, :shrink => false)
     swin_vpaned.pack2(swin, :resize => true, :shrink => false)
     
-    get_icon()
     fill_store("new_path")
     iconview = Gtk::IconView.new(@file_store)
     iconview.selection_mode = :multiple
@@ -57,7 +59,7 @@ class FileManager
     # win settings
     swin.set_size_request(650, 400)
     win.set_size_request(700, 400)
-    win.set_title("File Manager")
+    win.set_title("RFileManager")
     win.signal_connect("destroy"){Gtk.main_quit}
     win.set_window_position(Gtk::Window::Position::CENTER)
     win.add(main_vbox)
@@ -109,18 +111,44 @@ def go_next(i)
   @curr_dir = @parent
 end
 
-def fill_store(status)
-    check_status(status)
-    set_adress_line()
-    @file_store.clear 
-    Dir.glob(File.join(@parent, "*")).each do |path|
-        is_dir = FileTest.directory?(path)
-        iter = @file_store.append
-        iter[COL_DISPLAY_NAME] = GLib.filename_to_utf8(File.basename(path))
-        iter[COL_PATH] = path
-        iter[COL_IS_DIR] = is_dir
-        iter[COL_PIXBUF] = is_dir ? @dir_icon : @file_icon
+def get_icon_name(is_dir, path) 
+  if is_dir        
+    icon = "gnome-fs-directory"
+    else
+      @mime = FileMagic.mime
+      mimetype = @mime.file(path)
+      part1 = mimetype.split(";")
+      part2 = part1[0].split("/")
+      # inappropriate file format
+      if not mimetype.include?(";")
+        icon = mimetype.split(" ")
+        part2[1] = icon[0]
+      end
+      icon = @icon_list.grep(/#{part2[1]}/)
+      if icon.class == Array
+        icon = icon[0]
+      end
+      if icon == nil
+        icon = "gnome-fs-regular"
+      end
     end
+  return icon
+end
+
+def fill_store(status)
+  check_status(status)
+  set_adress_line()
+  @file_store.clear 
+  Dir.glob(File.join(@parent, "*")).each do |path|       
+    is_dir = FileTest.directory?(path)
+    icon_name = get_icon_name(is_dir, path)
+    icon = @icon_theme.load_icon(icon_name, 48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
+    iter = @file_store.append
+    iter[COL_DISPLAY_NAME] = GLib.filename_to_utf8(File.basename(path))
+    iter[COL_PATH] = path
+    iter[COL_IS_DIR] = is_dir
+    iter[COL_PIXBUF] = icon
+  end
 end
 
 def set_adress_line
@@ -209,12 +237,6 @@ def click_treeview_row(clicked_treeview, hash, unselect_treeview)
   s = unselect_treeview.selection
   s.unselect_all
 end
-  
-def get_icon
-  icon_theme = Gtk::IconTheme.default
-  @file_icon = icon_theme.load_icon("gnome-fs-regular", 48, Gtk::IconTheme::LookupFlags::FORCE_SVG) 
-  @dir_icon = icon_theme.load_icon("gnome-fs-directory", 48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
-end
  
 def create_toolbar
   @toolbar = Gtk::Toolbar.new 
@@ -234,7 +256,6 @@ def create_toolbar
   @toolbar.insert(@next_toolbut, 1)
   @toolbar.insert(up_toolbut, 2)
   @toolbar.insert(home_toolbut, 3)
-#  @toolbar.set_size_request(5, 5)
 end
 
 def create_menubar
