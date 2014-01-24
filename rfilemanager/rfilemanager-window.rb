@@ -1,5 +1,6 @@
 require "gtk3"
 require "filemagic"
+require "./rfilemanager-file-actions"
 
 class FileManager
   INDEX = 0
@@ -14,6 +15,8 @@ class FileManager
     icon_theme = Gtk::IconTheme.default
     @icon_list = icon_theme.icons
     @icon_theme = Gtk::IconTheme.default
+    @mime = FileMagic.mime
+    @file_actions_obj = FileActions.new
     set_adress_line()
     @color=Gdk::RGBA::new(18,89,199,0.2)
     win = Gtk::Window.new
@@ -48,11 +51,15 @@ class FileManager
     iconview.text_column = COL_DISPLAY_NAME
     iconview.pixbuf_column = COL_PIXBUF
     iconview.signal_connect("item_activated") do |_, path|
-      @back_toolbut.sensitive = true
       iter = @file_store.get_iter(path)
         if iter[COL_DISPLAY_NAME]
-          @parent = iter[COL_PATH]
-          fill_store("new_path")
+          if @mime.file(iter[COL_PATH]).include?("directory")
+            @parent = iter[COL_PATH]
+            fill_store("new_path")
+            @back_toolbut.sensitive = true
+         else
+           @file_actions_obj.open_default_application(iter[COL_PATH])
+         end
         end
       end
     swin.add(iconview)
@@ -115,7 +122,6 @@ def get_icon_name(is_dir, path)
   if is_dir        
     icon = "gnome-fs-directory"
     else
-      @mime = FileMagic.mime
       mimetype = @mime.file(path)
       part1 = mimetype.split(";")
       part2 = part1[0].split("/")
