@@ -1,6 +1,7 @@
 require "gtk3"
 require "filemagic"
 require "./rfilemanager-file-actions"
+require "./rfilemanager-tab"
 
 class FileManager
   INDEX = 0
@@ -12,18 +13,19 @@ class FileManager
     @route = Array.new
     @file_path_entry = Gtk::Entry.new
     @file_path_entry.editable = false
-    icon_theme = Gtk::IconTheme.default
-    @icon_list = icon_theme.icons
     @icon_theme = Gtk::IconTheme.default
+    @icon_list = @icon_theme.icons
     @mime = FileMagic.mime
     @file_actions_obj = FileActions.new
+    @tab_obj = AddRemoveTab.new
+    @tab_obj.create_variable()
     set_adress_line()
     @color=Gdk::RGBA::new(18,89,199,0.2)
-    win = Gtk::Window.new
+    @win = Gtk::Window.new
     swin =  Gtk::ScrolledWindow.new
     swin_vpaned = Gtk::Paned.new(:horizontal) 
-    viewport  = Gtk::Viewport.new(swin.hadjustment, swin.vadjustment)
-    @file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
+#    viewport  = Gtk::Viewport.new(swin.hadjustment, swin.vadjustment)
+#    @file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
     main_vbox = Gtk::Box.new(:vertical, 2)
     toolbar_hbox = Gtk::Box.new(:horizontal, 0)
     menus = create_menubar    
@@ -42,124 +44,26 @@ class FileManager
     main_vbox.homogeneous=false
     toolbar_hbox.homogeneous=false
     treeview_vbox.pack_start(@places_treeview)
+    @tab_obj.set_buttons(@back_toolbut, @next_toolbut)
+    @tab = Gtk::Notebook.new
+    @tab.scrollable = true
+    @tab_obj.new_tab(@tab, @parent)
     swin_vpaned.pack1(treeview_vbox, :resize => true, :shrink => false)
-    swin_vpaned.pack2(swin, :resize => true, :shrink => false)
-    
-    fill_store("new_path")
-    iconview = Gtk::IconView.new(@file_store)
-    iconview.selection_mode = :multiple
-    iconview.text_column = COL_DISPLAY_NAME
-    iconview.pixbuf_column = COL_PIXBUF
-    iconview.signal_connect("item_activated") do |_, path|
-      iter = @file_store.get_iter(path)
-        if iter[COL_DISPLAY_NAME]
-          if @mime.file(iter[COL_PATH]).include?("directory")
-            @parent = iter[COL_PATH]
-            fill_store("new_path")
-            @back_toolbut.sensitive = true
-         else
-           @file_actions_obj.open_default_application(iter[COL_PATH])
-         end
-        end
-      end
-    swin.add(iconview)
+    swin_vpaned.pack2(@tab, :resize => true, :shrink => false)
+
     # win settings
     swin.set_size_request(650, 400)
-    win.set_size_request(700, 400)
-    win.set_title("RFileManager")
-    win.signal_connect("destroy"){Gtk.main_quit}
-    win.set_window_position(Gtk::Window::Position::CENTER)
-    win.add(main_vbox)
-    win.show_all
+    @win.set_size_request(700, 400)
+    @win.set_title("RFileManager")
+    @win.signal_connect("destroy"){Gtk.main_quit}
+    @win.set_window_position(Gtk::Window::Position::CENTER)
+    @win.add(main_vbox)
+    @win.show_all
   end
 
-# implements according to file path new or old
-def check_status(status)
-  i = @route.index(@curr_dir)
-  if status == "new_path"
-    # if path added already
-    if i != nil and @route[i+1] == @parent
-      go_next(i)
-      return
-    # if route changes
-    elsif i != nil and @route[i+1] != @parent
-      @route = @route.take(i+1)
-      @next_toolbut.sensitive = false
-      @back_toolbut.sensitive = true
-    end
-    @route.push(@parent)
-    @curr_dir = @parent
-  # pressed back but
-  elsif status == "back"
-    go_back(i)
-  # pressed next but
-  elsif status == "next"
-    go_next(i)
+  def set_adress_line
+    @file_path_entry.text = @parent
   end
-end
-
-# implements back tool but
-def go_back(i)
-  @next_toolbut.sensitive = true
-  if i == 1      
-    @back_toolbut.sensitive = false
-  end
-  @parent = @route[i-1]
-  @curr_dir = @parent
-end
-
-# implements next tool but
-def go_next(i)
-  @back_toolbut.sensitive = true
-  if i+2 == @route.length
-    @next_toolbut.sensitive = false
-  end
-  @parent = @route[i+1]
-  @curr_dir = @parent
-end
-
-def get_icon_name(is_dir, path) 
-  if is_dir        
-    icon = "gnome-fs-directory"
-    else
-      mimetype = @mime.file(path)
-      part1 = mimetype.split(";")
-      part2 = part1[0].split("/")
-      # inappropriate file format
-      if not mimetype.include?(";")
-        icon = mimetype.split(" ")
-        part2[1] = icon[0]
-      end
-      icon = @icon_list.grep(/#{part2[1]}/)
-      if icon.class == Array
-        icon = icon[0]
-      end
-      if icon == nil
-        icon = "gnome-fs-regular"
-      end
-    end
-  return icon
-end
-
-def fill_store(status)
-  check_status(status)
-  set_adress_line()
-  @file_store.clear 
-  Dir.glob(File.join(@parent, "*")).each do |path|       
-    is_dir = FileTest.directory?(path)
-    icon_name = get_icon_name(is_dir, path)
-    icon = @icon_theme.load_icon(icon_name, 48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
-    iter = @file_store.append
-    iter[COL_DISPLAY_NAME] = GLib.filename_to_utf8(File.basename(path))
-    iter[COL_PATH] = path
-    iter[COL_IS_DIR] = is_dir
-    iter[COL_PIXBUF] = icon
-  end
-end
-
-def set_adress_line
-  @file_path_entry.text = @parent
-end
 
 # add devices (under /media/username/) to @device_hash
 def media_dir
@@ -252,11 +156,12 @@ def create_toolbar
   @next_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_FORWARD)
   home_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::HOME)
   up_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_UP)
-   
   @back_toolbut.sensitive = false
   @next_toolbut.sensitive = false
-  @back_toolbut.signal_connect("clicked"){fill_store("back")}
-  @next_toolbut.signal_connect("clicked"){fill_store("next")}
+  @back_toolbut.signal_connect("clicked"){parent = @tab.get_nth_page(@tab.page).child.parent;
+                                          @tab_obj.fill_store("back", parent, @tab, nil)}
+  @next_toolbut.signal_connect("clicked"){parent = @tab.get_nth_page(@tab.page).child.parent;
+                                          @tab_obj.fill_store("next", parent, @tab, nil)}
 #  @home_toolbut.signal_connect('clicked'){fill_store()}
   @toolbar.insert(@back_toolbut, 0)
   @toolbar.insert(@next_toolbut, 1)
@@ -301,6 +206,8 @@ def create_menubar
   menubar.append(filem)
   menubar.append(viewm)
   menubar.append(helpm)
+  newtab_item.signal_connect("activate"){parent = @tab.get_nth_page(@tab.page).child.parent;@tab_obj.new_tab(@tab, parent); @win.show_all}
+  newwindow_item.signal_connect("activate"){current_page = @tab.get_nth_page(@tab.page); puts current_page.child.parent}
   return menubar
 end
  
