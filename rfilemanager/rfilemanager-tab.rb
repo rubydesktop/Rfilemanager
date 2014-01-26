@@ -45,8 +45,18 @@ class AddRemoveTab
     new_page.child.route.push(parent)
     new_page.child.file_store = file_store
     tab.signal_connect("switch-page") do |_, _, current_page_num|
+      @file_path_entry.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
     end
+  end
+
+  def set_tab_name(tab)
+    # sets file path
+    @file_path_entry.text = tab.get_nth_page(tab.page).child.parent
+    # gets basename
+    file_path = File.basename(tab.get_nth_page(tab.page).child.parent)
+    # sets tab name
+    tab.set_tab_label(tab.get_nth_page(tab.page), Gtk::Label.new(file_path))
   end
 
   def check_next_back_buttons(page_num, tab)
@@ -80,6 +90,7 @@ class AddRemoveTab
     else
       parent = tab.get_nth_page(tab.page).child.parent    
       fill_store2(parent, file_store)
+      set_tab_name(tab)
     end
   end
 
@@ -167,8 +178,9 @@ class AddRemoveTab
     return icon
   end
 
-  def set_buttons(back_button, next_button)
+  def set_buttons(back_button, next_button, file_path_entry)
     @back_but = back_button
     @next_but = next_button
+    @file_path_entry = file_path_entry
   end
 end

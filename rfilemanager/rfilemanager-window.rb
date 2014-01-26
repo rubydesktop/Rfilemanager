@@ -8,18 +8,11 @@ class FileManager
   COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
    
   def initialize
-    @parent = "#{ENV['HOME']}"
-    @curr_dir = @parent
-    @route = Array.new
+    parent = "#{ENV['HOME']}"
     @file_path_entry = Gtk::Entry.new
-    @file_path_entry.editable = false
-    @icon_theme = Gtk::IconTheme.default
-    @icon_list = @icon_theme.icons
-    @mime = FileMagic.mime
     @file_actions_obj = FileActions.new
     @tab_obj = AddRemoveTab.new
     @tab_obj.create_variable()
-    set_adress_line()
     @color=Gdk::RGBA::new(18,89,199,0.2)
     @win = Gtk::Window.new
     swin_vpaned = Gtk::Paned.new(:horizontal)
@@ -27,7 +20,7 @@ class FileManager
     toolbar_hbox = Gtk::Box.new(:horizontal, 0)
     menus = create_menubar    
     create_toolbar()
-    
+    @file_path_entry.text = parent
     main_vbox.pack_start(menus, :expand => false, :fill => false, :padding => 2)
     main_vbox.pack_start(@toolbar, :expand => false, :fill => true, :padding => 2)
     main_vbox.pack_start(swin_vpaned, :expand => true, :fill => true, :padding => 1)
@@ -39,10 +32,10 @@ class FileManager
     main_vbox.homogeneous=false
     toolbar_hbox.homogeneous=false
     treeview_vbox.pack_start(@places_treeview)
-    @tab_obj.set_buttons(@back_toolbut, @next_toolbut)
+    @tab_obj.set_buttons(@back_toolbut, @next_toolbut, @file_path_entry)
     @tab = Gtk::Notebook.new
     @tab.scrollable = true
-    @tab_obj.new_tab(@tab, @parent)
+    @tab_obj.new_tab(@tab, parent)
     swin_vpaned.pack1(treeview_vbox, :resize => true, :shrink => false)
     swin_vbox = Gtk::Box.new(:vertical, 2)
     swin_vbox.pack_start(@file_path_entry, :expand => false, :fill => false, :padding => 2)
@@ -56,10 +49,6 @@ class FileManager
     @win.set_window_position(Gtk::Window::Position::CENTER)
     @win.add(main_vbox)
     @win.show_all
-  end
-
-  def set_adress_line
-    @file_path_entry.text = @parent
   end
 
 # add devices (under /media/username/) to @device_hash
