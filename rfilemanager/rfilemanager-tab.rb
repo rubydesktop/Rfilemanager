@@ -37,24 +37,47 @@ def new_tab(tab, parent)
   swin.add(iconview)
   tab.append_page(swin, Gtk::Label.new(File.basename(parent)))
   # new page properties
-  new_page = tab.get_nth_page(tab.page+1)
+  new_page = tab.get_nth_page(tab.n_pages-1)
   new_page.child.parent = parent
   new_page.child.curr_dir = parent
   new_page.child.route.push(parent)
   new_page.child.file_store = file_store
+  tab.signal_connect("switch-page") do |_, _, current_page_num|
+    check_next_back_buttons(current_page_num, tab)
+  end
+end
+
+def check_next_back_buttons(page_num, tab)
+  if tab.get_nth_page(page_num).child.route.length == 1
+    @back_but.sensitive = false
+    @next_but.sensitive = false
+    return
+  elsif tab.get_nth_page(page_num).child.curr_dir == tab.get_nth_page(page_num).child.route.last
+    @back_but.sensitive = true
+    @next_but.sensitive = false
+    return
+  elsif tab.get_nth_page(page_num).child.curr_dir == tab.get_nth_page(page_num).child.route.first
+    @back_but.sensitive = false
+    @next_but.sensitive = true
+    return
+  else
+    @back_but.sensitive = true
+    @next_but.sensitive = true
+    return
+  end
 end
 
 def fill_store(status, parent, tab, file_store)
   if status 
     check_status(status, tab)
   end
-#  set_adress_line()
-  if file_store == nil
-    tab.get_nth_page(tab.page).child.file_store.clear
-    fill_store2(tab.get_nth_page(tab.page).child.parent, tab.get_nth_page(tab.page).child.file_store)
-    else
-    file_store.clear
-    file_store = fill_store2(parent, file_store)
+#  set_adress_line()   
+  file_store.clear
+  if tab.page == -1
+    fill_store2(parent, file_store)
+  else
+    parent = tab.get_nth_page(tab.page).child.parent    
+    fill_store2(parent, file_store)
   end
 end
 

@@ -159,9 +159,11 @@ def create_toolbar
   @back_toolbut.sensitive = false
   @next_toolbut.sensitive = false
   @back_toolbut.signal_connect("clicked"){parent = @tab.get_nth_page(@tab.page).child.parent;
-                                          @tab_obj.fill_store("back", parent, @tab, nil)}
+                                          file_store = @tab.get_nth_page(@tab.page).child.file_store
+                                          @tab_obj.fill_store("back", parent, @tab,file_store)}
   @next_toolbut.signal_connect("clicked"){parent = @tab.get_nth_page(@tab.page).child.parent;
-                                          @tab_obj.fill_store("next", parent, @tab, nil)}
+                                          file_store = @tab.get_nth_page(@tab.page).child.file_store
+                                          @tab_obj.fill_store("next", parent, @tab, file_store)}
 #  @home_toolbut.signal_connect('clicked'){fill_store()}
   @toolbar.insert(@back_toolbut, 0)
   @toolbar.insert(@next_toolbut, 1)
