@@ -27,11 +27,8 @@ class FileManager
     toolbar_hbox = Gtk::Box.new(:horizontal, 0)
     menus = create_menubar    
     create_toolbar()
-#    toolbar_hbox.pack_start(@toolbar, :expand => false, :fill => true, :padding =>0)
-#    toolbar_hbox.pack_start(@file_path_entry, :expand => true, :fill => true, :padding => 0)
     
     main_vbox.pack_start(menus, :expand => false, :fill => false, :padding => 2)
-#    main_vbox.pack_start(toolbar_hbox, :expand => false, :fill => true, :padding => 2)
     main_vbox.pack_start(@toolbar, :expand => false, :fill => true, :padding => 2)
     main_vbox.pack_start(swin_vpaned, :expand => true, :fill => true, :padding => 1)
     treeview_vbox = Gtk::Box.new(:vertical, 1)
