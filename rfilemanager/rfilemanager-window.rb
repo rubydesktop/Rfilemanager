@@ -1,6 +1,6 @@
-require "gtk3"
-require "filemagic"
-require "./rfilemanager-file-actions"
+require 'gtk3'
+require 'filemagic'
+require './rfilemanager-file-actions'
 require "./rfilemanager-tab"
 
 class FileManager
@@ -22,14 +22,11 @@ class FileManager
     set_adress_line()
     @color=Gdk::RGBA::new(18,89,199,0.2)
     @win = Gtk::Window.new
-    swin =  Gtk::ScrolledWindow.new
-    swin_vpaned = Gtk::Paned.new(:horizontal) 
-#    viewport  = Gtk::Viewport.new(swin.hadjustment, swin.vadjustment)
-#    @file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
+    swin_vpaned = Gtk::Paned.new(:horizontal)
     main_vbox = Gtk::Box.new(:vertical, 2)
     toolbar_hbox = Gtk::Box.new(:horizontal, 0)
     menus = create_menubar    
-    create_toolbar()
+    create_toolbar
     toolbar_hbox.pack_start(@toolbar, :expand => false, :fill => true, :padding =>0)
     toolbar_hbox.pack_start(@file_path_entry, :expand => true, :fill => true, :padding => 0)
     
@@ -52,7 +49,6 @@ class FileManager
     swin_vpaned.pack2(@tab, :resize => true, :shrink => false)
 
     # win settings
-    swin.set_size_request(650, 400)
     @win.set_size_request(700, 400)
     @win.set_title("RFileManager")
     @win.signal_connect("destroy"){Gtk.main_quit}
@@ -142,8 +138,8 @@ end
 def click_treeview_row(clicked_treeview, hash, unselect_treeview)
   selection = clicked_treeview.selection;
   iter = selection.selected
-  @parent = hash[iter[0]]
-  fill_store("new_path")
+  @tab.get_nth_page(@tab.page).child.parent = hash[iter[0]]
+  @tab_obj.fill_store("new_path", nil, @tab, @tab.get_nth_page(@tab.page).child.file_store)
   s = unselect_treeview.selection
   s.unselect_all
 end
@@ -158,12 +154,10 @@ def create_toolbar
   up_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_UP)
   @back_toolbut.sensitive = false
   @next_toolbut.sensitive = false
-  @back_toolbut.signal_connect("clicked"){parent = @tab.get_nth_page(@tab.page).child.parent;
-                                          file_store = @tab.get_nth_page(@tab.page).child.file_store
-                                          @tab_obj.fill_store("back", parent, @tab,file_store)}
-  @next_toolbut.signal_connect("clicked"){parent = @tab.get_nth_page(@tab.page).child.parent;
-                                          file_store = @tab.get_nth_page(@tab.page).child.file_store
-                                          @tab_obj.fill_store("next", parent, @tab, file_store)}
+  @back_toolbut.signal_connect("clicked"){@tab_obj.fill_store("back", @tab.get_nth_page(@tab.page).child.parent,
+                                         @tab, @tab.get_nth_page(@tab.page).child.file_store)}
+  @next_toolbut.signal_connect("clicked"){@tab_obj.fill_store("next", @tab.get_nth_page(@tab.page).child.parent,
+                                          @tab, @tab.get_nth_page(@tab.page).child.file_store)}
 #  @home_toolbut.signal_connect('clicked'){fill_store()}
   @toolbar.insert(@back_toolbut, 0)
   @toolbar.insert(@next_toolbut, 1)
@@ -209,7 +203,7 @@ def create_menubar
   menubar.append(viewm)
   menubar.append(helpm)
   newtab_item.signal_connect("activate"){parent = @tab.get_nth_page(@tab.page).child.parent;@tab_obj.new_tab(@tab, parent); @win.show_all}
-  newwindow_item.signal_connect("activate"){current_page = @tab.get_nth_page(@tab.page); puts current_page.child.parent}
+  # newwindow_item.signal_connect("activate"){}
   return menubar
 end
  
