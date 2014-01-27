@@ -51,40 +51,6 @@ class FileManager
     @win.show_all
   end
 
-# add devices (under /media/username/) to @device_hash
-def media_dir
-  @devices_hash = {"File System" => "/"} 
-  list = Array.new
-  # list of directories under /media/user
-  list += Dir.entries("/media/#{ENV["USER"]}").select {|entry|
-          File.directory? File.join("/media/#{ENV["USER"]}", entry) and
-               !(entry =='.' || entry == '..') }
-  list.each do |directory|
-   fullpath = File.join("/media/#{ENV["USER"]}", directory)
-   size = size_dir(fullpath)
-   @devices_hash[size] = fullpath
- end
-end
-
-def size_dir(fullpath)
-  pn = Pathname.new(fullpath)
-  size = pn.size 
-  # convert to gb
-  if size >= 1000 ** 3
-    size = size / (1000.0 ** 3)
-    size_type = "GB"
-  # convert to mb
-  elsif size >= 1000.0 ** 2
-    sizes = size / (1000.0 ** 2)
-    size_type = "MB"
-  # convert to kb
-  elsif size >= 1000
-    size = size / 1000.0
-    size_type = "KB"
-  end
-  return "#{size} #{size_type} VOLUME"
-end
-
 def create_places_treeview 
   @places_treeview = Gtk::TreeView.new
   renderer = Gtk::CellRendererText.new
@@ -113,7 +79,7 @@ def create_devices_treeview
   column   = Gtk::TreeViewColumn.new("DEVICES", renderer, :text => INDEX)
   @devices_treeview.append_column(column)
   store = Gtk::TreeStore.new(String)
-  media_dir()
+  @devices_hash = @file_actions_obj.get_volumes
   @devices_hash.each_key do |key|
     iter = store.append(nil)
     iter[INDEX] = key

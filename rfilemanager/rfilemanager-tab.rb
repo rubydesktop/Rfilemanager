@@ -14,6 +14,7 @@ class AddRemoveTab
     @file_actions_obj = FileActions.new
   end
 
+  # TODO split function
   def new_tab(tab, parent)
     swin =  Gtk::ScrolledWindow.new
     viewport  = Gtk::Viewport.new(swin.hadjustment, swin.vadjustment)
