@@ -8,7 +8,7 @@ class FileManager
   COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
    
   def initialize
-    parent = "#{ENV['HOME']}"
+    @parent = "#{ENV['HOME']}"
     @file_path_entry = Gtk::Entry.new
     @file_actions_obj = FileActions.new
     @tab_obj = AddRemoveTab.new
@@ -20,7 +20,7 @@ class FileManager
     toolbar_hbox = Gtk::Box.new(:horizontal, 0)
     menus = create_menubar    
     create_toolbar()
-    @file_path_entry.text = parent
+    @file_path_entry.text = @parent
     main_vbox.pack_start(menus, :expand => false, :fill => false, :padding => 2)
     main_vbox.pack_start(@toolbar, :expand => false, :fill => true, :padding => 2)
     main_vbox.pack_start(swin_vpaned, :expand => true, :fill => true, :padding => 1)
@@ -32,10 +32,10 @@ class FileManager
     main_vbox.homogeneous=false
     toolbar_hbox.homogeneous=false
     treeview_vbox.pack_start(@places_treeview)
-    @tab_obj.set_buttons(@back_toolbut, @next_toolbut, @file_path_entry)
+    @tab_obj.set_widget(@back_toolbut, @next_toolbut, @file_path_entry, @win)
     @tab = Gtk::Notebook.new
     @tab.scrollable = true
-    @tab_obj.new_tab(@tab, parent)
+    @tab_obj.new_tab(@tab, @parent)
     swin_vpaned.pack1(treeview_vbox, :resize => true, :shrink => false)
     swin_vbox = Gtk::Box.new(:vertical, 2)
     swin_vbox.pack_start(@file_path_entry, :expand => false, :fill => false, :padding => 2)
@@ -192,7 +192,14 @@ def create_menubar
   menubar.append(filem)
   menubar.append(viewm)
   menubar.append(helpm)
-  newtab_item.signal_connect("activate"){parent = @tab.get_nth_page(@tab.page).child.parent;@tab_obj.new_tab(@tab, parent); @win.show_all}
+  newtab_item.signal_connect("activate"){if @tab_obj.tab_available?(@tab)
+                                           path = @tab.get_nth_page(@tab.page).child.parent
+                                           @tab_obj.new_tab(@tab, path)
+                                           @win.show_all
+                                         else
+                                           @tab_obj.new_tab(@tab, @parent)
+                                           @win.show_all
+                                         end}
   # newwindow_item.signal_connect("activate"){}
   return menubar
 end

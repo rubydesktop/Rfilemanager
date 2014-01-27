@@ -19,6 +19,14 @@ class AddRemoveTab
     viewport  = Gtk::Viewport.new(swin.hadjustment, swin.vadjustment)
     file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
     fill_store(false, parent, tab, file_store)
+
+    hbox = Gtk::Box.new(:horizontal)
+    close_but = Gtk::Button.new
+    image = Gtk::Image.new
+    image.set_from_stock(Gtk::Stock::CLOSE, :menu)  
+    close_but.set_image(image)
+    close_but.set_relief(:none)
+    
     iconview = RFileManagerIconView.new
     iconview.model = file_store
     iconview.selection_mode = :multiple
@@ -37,13 +45,24 @@ class AddRemoveTab
       end
     end
     swin.add(iconview)
-    tab.append_page(swin, Gtk::Label.new(File.basename(parent)))
+
+    l = Gtk::Label.new(File.basename(parent))
+    hbox.pack_start(l, :expand => true, :fill => true, :padding =>2)
+    hbox.pack_start(close_but, :expand => true, :fill => true, :padding => 2)
+    tab.append_page(swin, hbox)
+    hbox.show_all
     # new page properties
     new_page = tab.get_nth_page(tab.n_pages-1)
     new_page.child.parent = parent
     new_page.child.curr_dir = parent
     new_page.child.route.push(parent)
     new_page.child.file_store = file_store
+    new_page.child.label = l
+    close_but.signal_connect("clicked"){tab.remove_page(tab.page_num(new_page));
+                                        if not tab_available?(tab)
+                                          @file_path_entry.text = ""
+                                        end
+                                       }
     tab.signal_connect("switch-page") do |_, _, current_page_num|
       @file_path_entry.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
@@ -56,7 +75,7 @@ class AddRemoveTab
     # gets basename
     file_path = File.basename(tab.get_nth_page(tab.page).child.parent)
     # sets tab name
-    tab.set_tab_label(tab.get_nth_page(tab.page), Gtk::Label.new(file_path))
+    tab.get_nth_page(tab.page).child.label.text = file_path
   end
 
   def check_next_back_buttons(page_num, tab)
@@ -178,9 +197,17 @@ class AddRemoveTab
     return icon
   end
 
-  def set_buttons(back_button, next_button, file_path_entry)
+  def set_widget(back_button, next_button, file_path_entry, win)
     @back_but = back_button
     @next_but = next_button
     @file_path_entry = file_path_entry
+    @main_window = win
+  end
+  
+  # if any tab available return true for new_tab function
+  def tab_available?(tab)
+    if tab.n_pages >= 1
+      return true
+    end
   end
 end
