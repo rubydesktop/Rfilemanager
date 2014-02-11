@@ -106,19 +106,21 @@ def create_toolbar
   # tool buttons
   @back_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_BACK)
   @next_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_FORWARD)
-  home_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::HOME)
+  @home_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::HOME)
   up_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_UP)
   @back_toolbut.sensitive = false
   @next_toolbut.sensitive = false
   @back_toolbut.signal_connect("clicked"){@tab_obj.fill_store("back", @tab.get_nth_page(@tab.page).child.parent,
                                          @tab, @tab.get_nth_page(@tab.page).child.file_store)}
+
   @next_toolbut.signal_connect("clicked"){@tab_obj.fill_store("next", @tab.get_nth_page(@tab.page).child.parent,
                                           @tab, @tab.get_nth_page(@tab.page).child.file_store)}
-#  @home_toolbut.signal_connect('clicked'){fill_store()}
+
+  @home_toolbut.signal_connect('clicked'){@tab_obj.pressed_home_buton(@tab)}
   @toolbar.insert(@back_toolbut, 0)
   @toolbar.insert(@next_toolbut, 1)
   @toolbar.insert(up_toolbut, 2)
-  @toolbar.insert(home_toolbut, 3)
+  @toolbar.insert(@home_toolbut, 3)
 end
 
 def create_menubar

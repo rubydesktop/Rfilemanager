@@ -103,10 +103,9 @@ class AddRemoveTab
     if status 
       check_status(status, tab)
     end
-    # set_adress_line()   
-    file_store.clear
+    # set_adress_line()
     if tab.page == -1
-    fill_store2(parent, file_store)
+      fill_store2(parent, file_store)
     else
       parent = tab.get_nth_page(tab.page).child.parent    
       fill_store2(parent, file_store)
@@ -115,6 +114,7 @@ class AddRemoveTab
   end
 
   def fill_store2(parent, file_store)
+    file_store.clear
     Dir.glob(File.join(parent, "*")).each do |path|
       is_dir = FileTest.directory?(path)
       icon_name = get_icon_name(is_dir, path)
@@ -130,7 +130,6 @@ class AddRemoveTab
   # implements according to file path new or old
   def check_status(status, tab) 
     i = tab.get_nth_page(tab.page).child.route.index(tab.get_nth_page(tab.page).child.curr_dir)
-  
     if status == "new_path"
       # if path added already
       if i != nil and tab.get_nth_page(tab.page).child.route[i+1] == tab.get_nth_page(tab.page).child.parent
@@ -173,6 +172,16 @@ class AddRemoveTab
     end
     tab.get_nth_page(tab.page).child.parent = tab.get_nth_page(tab.page).child.route[i+1]
     tab.get_nth_page(tab.page).child.curr_dir = tab.get_nth_page(tab.page).child.parent
+  end
+ 
+  def pressed_home_buton(tab)
+    if tab.get_nth_page(tab.page).child.curr_dir == ENV["HOME"]
+      return
+    end
+    fill_store2(ENV["HOME"], tab.get_nth_page(tab.page).child.file_store)
+    tab.get_nth_page(tab.page).child.route.push(ENV["HOME"])
+    @back_but.sensitive = true
+    @next_but.sensitive = false
   end
 
   def get_icon_name(is_dir, path)
