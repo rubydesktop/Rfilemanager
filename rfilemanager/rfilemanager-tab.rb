@@ -40,6 +40,7 @@ class AddRemoveTab
           tab.get_nth_page(tab.page).child.parent = iter[COL_PATH]
           fill_store("new_path", iter[COL_PATH], tab, file_store)
           @back_but.sensitive = true
+          @up_but.sensitive = true
         else
           @file_actions_obj.open_default_application(iter[COL_PATH])
         end
@@ -86,6 +87,7 @@ class AddRemoveTab
       return
     elsif tab.get_nth_page(page_num).child.curr_dir == tab.get_nth_page(page_num).child.route.last
       @back_but.sensitive = true
+      @up_but.sensitive = true
       @next_but.sensitive = false
       return
     elsif tab.get_nth_page(page_num).child.curr_dir == tab.get_nth_page(page_num).child.route.first
@@ -94,6 +96,7 @@ class AddRemoveTab
       return
     else
       @back_but.sensitive = true
+      @up_but.sensitive = true
       @next_but.sensitive = true
       return
     end
@@ -140,6 +143,7 @@ class AddRemoveTab
         tab.get_nth_page(tab.page).child.route = tab.get_nth_page(tab.page).child.route.take(i+1)
         @next_but.sensitive = false
         @back_but.sensitive = true
+        @up_but.sensitive = true
       end
       tab.get_nth_page(tab.page).child.route.push(tab.get_nth_page(tab.page).child.parent)
       tab.get_nth_page(tab.page).child.curr_dir = tab.get_nth_page(tab.page).child.parent
@@ -167,6 +171,7 @@ class AddRemoveTab
   # implements next tool but
   def go_next(i, tab)
     @back_but.sensitive = true
+    @up_but.sensitive = true
     if i+2 == tab.get_nth_page(tab.page).child.route.length
       @next_but.sensitive = false
     end
@@ -175,13 +180,26 @@ class AddRemoveTab
   end
  
   def pressed_home_buton(tab)
-    if tab.get_nth_page(tab.page).child.curr_dir == ENV["HOME"]
+    if tab.get_nth_page(tab.page).child.curr_dir == "#{ENV["HOME"]}/"
       return
     end
-    fill_store2(ENV["HOME"], tab.get_nth_page(tab.page).child.file_store)
-    tab.get_nth_page(tab.page).child.route.push(ENV["HOME"])
+    tab.get_nth_page(tab.page).child.parent = "#{ENV["HOME"]}/"
+    fill_store(false, "#{ENV["HOME"]}/", tab, tab.get_nth_page(tab.page).child.file_store)
+    tab.get_nth_page(tab.page).child.route.push("#{ENV["HOME"]}/")
     @back_but.sensitive = true
+    @up_but.sensitive = true
     @next_but.sensitive = false
+  end
+
+  def pressed_up_button(tab)
+    basename = File.basename(tab.get_nth_page(tab.page).child.parent)
+    parent = tab.get_nth_page(tab.page).child.parent
+    parent = parent.chomp(basename + "/")
+    tab.get_nth_page(tab.page).child.parent = parent
+    fill_store("new_path", parent, tab, tab.get_nth_page(tab.page).child.file_store)
+    if parent == "/"
+      @up_but.sensitive = false
+    end
   end
 
   def get_icon_name(is_dir, path)
@@ -207,9 +225,10 @@ class AddRemoveTab
     return icon
   end
 
-  def set_widget(back_button, next_button, file_path_entry, win)
+  def set_widget(back_button, next_button, file_path_entry, win, up_button)
     @back_but = back_button
     @next_but = next_button
+    @up_but = up_button
     @file_path_entry = file_path_entry
     @main_window = win
   end

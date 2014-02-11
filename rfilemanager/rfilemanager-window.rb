@@ -8,7 +8,7 @@ class FileManager
   COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
    
   def initialize
-    @parent = "#{ENV['HOME']}"
+    @parent = "#{ENV['HOME']}/"
     @file_path_entry = Gtk::Entry.new
     @file_actions_obj = FileActions.new
     @tab_obj = AddRemoveTab.new
@@ -32,7 +32,7 @@ class FileManager
     main_vbox.homogeneous=false
     toolbar_hbox.homogeneous=false
     treeview_vbox.pack_start(@places_treeview)
-    @tab_obj.set_widget(@back_toolbut, @next_toolbut, @file_path_entry, @win)
+    @tab_obj.set_widget(@back_toolbut, @next_toolbut, @file_path_entry, @win, @up_toolbut)
     @tab = Gtk::Notebook.new
     @tab.scrollable = true
     @tab_obj.new_tab(@tab, @parent)
@@ -57,7 +57,7 @@ def create_places_treeview
   column   = Gtk::TreeViewColumn.new("PLACES", renderer,  :text => INDEX)
   @places_treeview.append_column(column)
   store = Gtk::TreeStore.new(String)
-  @places_hash = {"#{ENV["USER"]}" => "#{ENV["HOME"]}", "Desktop" => "#{ENV["HOME"]}/Desktop"}
+  @places_hash = {"#{ENV["USER"]}" => "#{ENV["HOME"]}/", "Desktop" => "#{ENV["HOME"]}/Desktop/"}
     @places_treeview.model = store
   selection = @places_treeview.selection;
   @places_hash.each_key do |key|
@@ -107,7 +107,7 @@ def create_toolbar
   @back_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_BACK)
   @next_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_FORWARD)
   @home_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::HOME)
-  up_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_UP)
+  @up_toolbut = Gtk::ToolButton.new(:stock_id => Gtk::Stock::GO_UP)
   @back_toolbut.sensitive = false
   @next_toolbut.sensitive = false
   @back_toolbut.signal_connect("clicked"){@tab_obj.fill_store("back", @tab.get_nth_page(@tab.page).child.parent,
@@ -117,9 +117,11 @@ def create_toolbar
                                           @tab, @tab.get_nth_page(@tab.page).child.file_store)}
 
   @home_toolbut.signal_connect('clicked'){@tab_obj.pressed_home_buton(@tab)}
+  @up_toolbut.signal_connect('clicked'){@tab_obj.pressed_up_button(@tab)}
+
   @toolbar.insert(@back_toolbut, 0)
   @toolbar.insert(@next_toolbut, 1)
-  @toolbar.insert(up_toolbut, 2)
+  @toolbar.insert(@up_toolbut, 2)
   @toolbar.insert(@home_toolbut, 3)
 end
 
