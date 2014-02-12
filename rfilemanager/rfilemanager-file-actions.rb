@@ -1,5 +1,6 @@
 require "gtk3"
 require "gio2"
+require "./rfilemanager-tab"
 
 class FileActions
 
@@ -29,15 +30,18 @@ class FileActions
   end
 
   # if occurs any change in any tab, updates other tabs
-#  def update_tabs(tab)
-#    i = 0
-#    while i < tab.n_pages
-#      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page)
-#        if i != tab.page
-#          fill_store2(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).file_store)
-#        end
-#    end
-
+  def update_tabs(tab)
+    i = 0
+    tab_obj = AddRemoveTab.new
+    tab_obj.create_variable
+    while i < tab.n_pages
+      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
+        if i != tab.page
+          tab_obj.fill_store2(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store)
+        end
+      end
+    i += 1
+    end
   end
 
   def rename_window(path, tab)
@@ -56,7 +60,7 @@ class FileActions
     fixed.put(cancel, 100, 100)
     fixed.put(ok, 200, 100)
  
-    ok.signal_connect("clicked"){change_file_name(path, tab, entry); w.destroy;}
+    ok.signal_connect("clicked"){change_file_name(path, tab, entry); update_tabs(tab); w.destroy;}
     cancel.signal_connect("clicked"){w.destroy}
 
     w.add(fixed)
