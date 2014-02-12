@@ -58,10 +58,10 @@ def create_places_treeview
   column   = Gtk::TreeViewColumn.new("PLACES", renderer,  :text => INDEX)
   @places_treeview.append_column(column)
   store = Gtk::TreeStore.new(String)
-  @places_hash = {"#{ENV["USER"]}" => "#{ENV["HOME"]}/", "Desktop" => "#{ENV["HOME"]}/Desktop/"}
+  places_hash = {"#{ENV["USER"]}" => "#{ENV["HOME"]}/", "Desktop" => "#{ENV["HOME"]}/Desktop/"}
     @places_treeview.model = store
   selection = @places_treeview.selection;
-  @places_hash.each_key do |key|
+  places_hash.each_key do |key|
     iter = store.append(nil)
     if key == "#{ENV["USER"]}"
       selection.select_iter(iter)
@@ -70,26 +70,42 @@ def create_places_treeview
   end
   @places_treeview.override_background_color(0, @color)
   @places_treeview.signal_connect("cursor-changed"){
-                   click_treeview_row(@places_treeview, @places_hash,
+                   click_treeview_row(@places_treeview, places_hash,
                                       @devices_treeview)}
 end
 
 def create_devices_treeview
+
   @devices_treeview = Gtk::TreeView.new
   renderer = Gtk::CellRendererText.new
   column   = Gtk::TreeViewColumn.new("DEVICES", renderer, :text => INDEX)
   @devices_treeview.append_column(column)
   store = Gtk::TreeStore.new(String)
-  @devices_hash = @file_actions_obj.get_volumes
-  @devices_hash.each_key do |key|
+  devices_hash = @file_actions_obj.get_volumes
+  devices_hash.each_key do |key|
     iter = store.append(nil)
     iter[INDEX] = key
   end
   @devices_treeview.model = store
   @devices_treeview.override_background_color(0, @color)
+
   @devices_treeview.signal_connect("cursor-changed"){
-                    click_treeview_row(@devices_treeview, @devices_hash,
+                    click_treeview_row(@devices_treeview, devices_hash,
                                        @places_treeview)}
+
+  @volume = Gio::VolumeMonitor.get
+  @volume.signal_connect("volume-added") do |vol|
+    add_volume(devices_hash, store)
+    @win.show_all
+  end
+end
+
+def add_volume(devices_hash, store)
+  all_volumes = @volume.volumes
+  v = all_volumes.last.mount
+  devices_hash.store(v.name, v)
+  iter = store.append(nil)
+  iter[INDEX] = v.name
 end
 
 def click_treeview_row(clicked_treeview, hash, unselect_treeview)
