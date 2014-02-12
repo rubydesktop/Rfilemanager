@@ -1,4 +1,5 @@
 require "gtk3"
+require "gio2"
 require "filemagic"
 require "./rfilemanager-file-actions"
 require "./rfilemanager-tab"
@@ -94,7 +95,11 @@ end
 def click_treeview_row(clicked_treeview, hash, unselect_treeview)
   selection = clicked_treeview.selection;
   iter = selection.selected
-  @tab.get_nth_page(@tab.page).child.parent = hash[iter[0]]
+  if iter[0] == "File System"
+    @tab.get_nth_page(@tab.page).child.parent = "/"
+  else
+    @tab.get_nth_page(@tab.page).child.parent = hash[iter[0]].get_mount.default_location.path
+  end
   @tab_obj.fill_store("new_path", nil, @tab, @tab.get_nth_page(@tab.page).child.file_store)
   s = unselect_treeview.selection
   s.unselect_all
