@@ -47,13 +47,32 @@ class AddRemoveTab
       end
     end
     swin.add(iconview)
+    
+    # iconview x,y coordinate detect
+    iconview.signal_connect("motion-notify-event") do |widget, event|
+      @iconview_path = iconview.get_path_at_pos(event.x, event.y)
+    end
+
+    # right click activate
+    iconview.signal_connect("button-press-event") do |widget, event|
+      if event.event_type == Gdk::Event::Type::BUTTON_PRESS
+        if event.button == 3
+          iconview.unselect_all
+          if @iconview_path != nil
+            iconview.select_path(@iconview_path)
+            @file_actions_obj.rightclik_menu(event, @iconview_path, tab) 
+            @main_window.show_all
+          end
+        end
+      end
+    end
 
     l = Gtk::Label.new(File.basename(parent))
     hbox.pack_start(l, :expand => true, :fill => true, :padding =>2)
     hbox.pack_start(close_but, :expand => true, :fill => true, :padding => 2)
     tab.append_page(swin, hbox)
     hbox.show_all
-    # new page properties
+    # new page propertis
     new_page = tab.get_nth_page(tab.n_pages-1)
     new_page.child.parent = parent
     new_page.child.curr_dir = parent
@@ -70,7 +89,7 @@ class AddRemoveTab
       check_next_back_buttons(current_page_num, tab)
     end
   end
-
+    
   def set_tab_name(tab)
     # sets file path
     @file_path_entry.text = tab.get_nth_page(tab.page).child.parent
