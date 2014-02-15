@@ -39,6 +39,7 @@ class FileManager
     @tab_obj.new_tab(@tab, @parent)
     swin_vpaned.pack1(treeview_vbox, :resize => true, :shrink => false)
     swin_vbox = Gtk::Box.new(:vertical, 2)
+    swin_vbox.set_size_request(350, 400)
     swin_vbox.pack_start(@file_path_entry, :expand => false, :fill => false, :padding => 2)
     swin_vbox.pack_start(@tab, :expand => true, :fill => true, :padding => 2)
     swin_vpaned.pack2(swin_vbox, :resize => true, :shrink => false)
