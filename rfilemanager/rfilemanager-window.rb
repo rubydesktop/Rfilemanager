@@ -111,10 +111,10 @@ end
 def click_treeview_row(clicked_treeview, hash, unselect_treeview)
   selection = clicked_treeview.selection;
   iter = selection.selected
-  if iter[0] == "File System"
-    @tab.get_nth_page(@tab.page).child.parent = "/"
+  if hash[iter[0]].class == String
+    @tab.get_nth_page(@tab.page).child.parent = hash[iter[0]]
   else
-    @tab.get_nth_page(@tab.page).child.parent = hash[iter[0]].get_mount.default_location.path
+    @tab.get_nth_page(@tab.page).child.parent = hash[iter[0]].get_mount.default_location.path 
   end
   @tab_obj.fill_store("new_path", nil, @tab, @tab.get_nth_page(@tab.page).child.file_store)
   s = unselect_treeview.selection
