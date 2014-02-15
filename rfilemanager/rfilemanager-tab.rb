@@ -8,10 +8,8 @@ class AddRemoveTab
   COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
 
   def create_variable
-    @icon_theme = Gtk::IconTheme.default
-    @icon_list = @icon_theme.icons
-    @mime = FileMagic.mime
     @file_actions_obj = FileActions.new
+    @file_actions_obj.get_icon_list
   end
 
   # TODO split function
@@ -33,10 +31,11 @@ class AddRemoveTab
     iconview.selection_mode = :multiple
     iconview.text_column = COL_DISPLAY_NAME
     iconview.pixbuf_column = COL_PIXBUF
+    mime = FileMagic.mime
     iconview.signal_connect("item_activated") do |_, path|
       iter = file_store.get_iter(path)
       if iter[COL_DISPLAY_NAME]
-        if @mime.file(iter[COL_PATH]).include?("directory")
+        if mime.file(iter[COL_PATH]).include?("directory")
           tab.get_nth_page(tab.page).child.parent = iter[COL_PATH]
           fill_store("new_path", iter[COL_PATH], tab, file_store)
           @back_but.sensitive = true
@@ -137,10 +136,10 @@ class AddRemoveTab
 
   def fill_store2(parent, file_store)
     file_store.clear
+    icon_theme = Gtk::IconTheme.default
     Dir.glob(File.join(parent, "*")).each do |path|
       is_dir = FileTest.directory?(path)
-      icon_name = get_icon_name(is_dir, path)
-      icon = @icon_theme.load_icon(icon_name, 48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
+      icon = @file_actions_obj.get_icon(is_dir, path)
       iter = file_store.append
       iter[COL_DISPLAY_NAME] = GLib.filename_to_utf8(File.basename(path))
       iter[COL_PATH] = path
@@ -221,29 +220,6 @@ class AddRemoveTab
     end
   end
 
-  def get_icon_name(is_dir, path)
-    if is_dir
-      icon = "gnome-fs-directory"
-    else
-        mimetype = @mime.file(path)
-        part1 = mimetype.split(";")
-        part2 = part1[0].split("/")
-        # inappropriate file format
-        if not mimetype.include?(";")
-          icon = mimetype.split(" ")
-          part2[1] = icon[0]
-        end
-        icon = @icon_list.grep(/#{part2[1]}/)
-        if icon.class == Array
-          icon = icon[0]
-        end
-        if icon == nil
-          icon = "gnome-fs-regular"
-        end
-      end
-    return icon
-  end
-
   def set_widget(back_button, next_button, file_path_entry, win, up_button)
     @back_but = back_button
     @next_but = next_button
@@ -258,4 +234,5 @@ class AddRemoveTab
       return true
     end
   end
+
 end

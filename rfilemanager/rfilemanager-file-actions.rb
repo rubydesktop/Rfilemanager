@@ -1,5 +1,6 @@
 require "gtk3"
 require "gio2"
+require "filemagic"
 require "./rfilemanager-tab"
 
 class FileActions
@@ -21,12 +22,12 @@ class FileActions
   end
 
   # file name changes & display name changes
-  def change_file_name(path, tab, entry)
+  def change_file_name(path, tab, rename)
     iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
-    new_file_path = iter[0].chomp(iter[1]) + entry.text
+    new_file_path = iter[0].chomp(iter[1]) + rename
     File.rename(iter[0], new_file_path)
     iter[0] = new_file_path
-    iter[1] = entry.text
+    iter[1] = rename
   end
 
   # if occurs any change in any tab, updates other tabs
@@ -44,27 +45,90 @@ class FileActions
     end
   end
 
+  def create_error_msg_win(msg)
+     error_msg_win = Gtk::MessageDialog.new(:parent => nil, :flags => :modal,
+               :type => :error, :buttons_type => :close, :message => msg)
+     return error_msg_win
+  end
+
+  def create_dialog_win(title)
+    dialog = Gtk::Dialog.new(:title => title, :parent => nil,
+                             :flags => :modal, :buttons => [[Gtk::Stock::OK, :ok],
+                             [Gtk::Stock::CANCEL, :cancel]])
+    dialog.default_response = Gtk::ResponseType::OK
+    return dialog
+  end
+
   def rename_window(path, tab)
-    w = Gtk::Window.new
-    w.set_title("Rename")
-    w.set_default_size(300, 140)
-    cancel = Gtk::Button.new(:label => "Cancel")
-    cancel.set_size_request(80, 30)
- 
-    ok = Gtk::Button.new(:label => "OK")
-    ok.set_size_request(80, 30)   
+    is_dir = FileTest.directory?(path)
+    iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
+    icon = get_icon(is_dir, iter[0]) 
+    dialog = create_dialog_win("Rename")
+    table = Gtk::Table.new(4, 2, false)
+    rename_entry = Gtk::Entry.new
+    rename_entry.text = File.basename(iter[0])
+    rename_entry.select_region(0, -1)
+    table.attach_defaults(rename_entry, 1, 2, 0, 1)
+    image = Gtk::Image.new
+    image.pixbuf = icon
+    table.attach_defaults(image, 0, 1, 0, 1)
+    table.row_spacings = 5
+    table.column_spacings = 5
+    table.border_width = 10
+    dialog.child.add(table)
+    dialog.show_all
+    rename_entry.signal_connect("key-press-event") do |_, e|
+      # if pressed to enter button
+      if e.keyval == 65293 
+        dialog.response(Gtk::ResponseType::OK)
+      end
+    end
+    dialog.run do |response|
+      if response == Gtk::ResponseType::OK
+        if rename_entry.text == ""
+          error_msg_win = create_error_msg_win("Failed to rename #{iter[0]}")
+          error_msg_win.run
+          error_msg_win.destroy
+          dialog.destroy
+          return
+        end
+        change_file_name(path, tab, rename_entry.text)
+        update_tabs(tab)
+        dialog.destroy
+      else
+        dialog.destroy
+      end
+    end
+  end
+  
+  def get_icon(is_dir, path)
+    if is_dir
+      icon = "gnome-fs-directory"
+    else
+        mime = FileMagic.mime
+        mimetype = mime.file(path)
+        part1 = mimetype.split(";")
+        part2 = part1[0].split("/")
+        # inappropriate file format
+        if not mimetype.include?(";")
+          icon = mimetype.split(" ")
+          part2[1] = icon[0]
+        end
+        icon = @icon_list.grep(/#{part2[1]}/)
+        if icon.class == Array
+          icon = icon[0]
+        end
+        if icon == nil
+          icon = "gnome-fs-regular"
+        end
+      end
+    icon = @icon_theme.load_icon(icon, 48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
+    return icon
+  end
 
-    entry = Gtk::Entry.new
-    fixed = Gtk::Fixed.new
-    fixed.put(entry, 70, 40)
-    fixed.put(cancel, 100, 100)
-    fixed.put(ok, 200, 100)
- 
-    ok.signal_connect("clicked"){change_file_name(path, tab, entry); update_tabs(tab); w.destroy;}
-    cancel.signal_connect("clicked"){w.destroy}
-
-    w.add(fixed)
-    w.show_all
+  def get_icon_list
+    @icon_theme = Gtk::IconTheme.default
+    @icon_list = @icon_theme.icons
   end
 
   def rightclik_menu(event, path, tab)
