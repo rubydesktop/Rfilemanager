@@ -87,6 +87,19 @@ class AddRemoveTab
       @file_path_entry.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
     end
+    iconview.drag_dest_set(Gtk::Drag::DestDefaults::ALL,
+                       [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 98765]],
+                      Gdk::DragContext::Action::MOVE)
+    iconview.drag_source_set(Gdk::Window::ModifierType::BUTTON1_MASK,
+                         [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 12885]],
+                         Gdk::DragContext::Action::MOVE)
+    iconview.signal_connect("drag-data-get") do |widget, drag_context, data, info, time|
+      # drag_context.selection
+    end
+    iconview.signal_connect("drag-drop") do |w, dc, x, y, time|
+      # w.drag_get_data(dc, dc.targets[-1], time)
+      # target = w.drag_dest_find_target(dc, w.drag_dest_get_target_list())
+    end
   end
     
   def set_tab_name(tab)

@@ -16,7 +16,7 @@ class FileActions
     # mount volumes
     all_volumes.each do |volume|
       v = volume.mount
-      hash.store(v.name, v) 
+      hash.store(v.name, volume) 
     end
     return hash
   end

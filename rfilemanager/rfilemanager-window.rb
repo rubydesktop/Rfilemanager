@@ -76,7 +76,6 @@ def create_places_treeview
 end
 
 def create_devices_treeview
-
   @devices_treeview = Gtk::TreeView.new
   renderer = Gtk::CellRendererText.new
   column   = Gtk::TreeViewColumn.new("DEVICES", renderer, :text => INDEX)
@@ -93,15 +92,38 @@ def create_devices_treeview
   @devices_treeview.signal_connect("cursor-changed"){
                     click_treeview_row(@devices_treeview, devices_hash,
                                        @places_treeview)}
-
   @volume = Gio::VolumeMonitor.get
   @volume.signal_connect("volume-added") do |vol|
-    add_volume(devices_hash, store)
+    add_volume(devices_hash, store, vol)
     @win.show_all
   end
+#  @volume.signal_connect("volume-removed") do |vol|  
+#  index = devices_hash.values.index(vol)
+#  iter = store.get_iter("1")
+#  store.remove(iter)
+#  @win.show_all
 end
 
-def add_volume(devices_hash, store)
+#@volume.signal_connect("volume-removed") do |vol| 
+#p vol
+#p " vol remove"
+#end
+#@volume.signal_connect("mount-added") do |vol| 
+#p vol
+#p "mount added"
+#end
+
+#    index = devices_hash.values.index(vol)
+#    iter = store.get_iter("2")
+#    store.remove(iter)
+#p "qeqw"
+#    key = devices_hash.invert[vol]
+#    devices_hash.delete(key)
+#    @win.show_all
+#    p devices_hash
+#  end 
+
+def add_volume(devices_hash, store, vol)
   all_volumes = @volume.volumes
   v = all_volumes.last.mount
   devices_hash.store(v.name, v)
