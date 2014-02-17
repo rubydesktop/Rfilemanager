@@ -10,6 +10,7 @@ class AddRemoveTab
 
   def create_variable
     @shortcut_obj = ShortCuts.new
+    @shortcut_obj.create_file_action_obj
     @file_actions_obj = FileActions.new
     @file_actions_obj.get_icon_list
   end
@@ -149,16 +150,18 @@ class AddRemoveTab
     end
     # set_adress_line()
     if tab.page == -1
-      fill_store2(parent, file_store)
+      fill_store2(parent, file_store, true)
     else
       parent = tab.get_nth_page(tab.page).child.parent    
-      fill_store2(parent, file_store)
+      fill_store2(parent, file_store, true)
       set_tab_name(tab)
     end
   end
 
-  def fill_store2(parent, file_store)
-    file_store.clear
+  def fill_store2(parent, file_store, clear)
+    if clear
+      file_store.clear
+    end
     icon_theme = Gtk::IconTheme.default
     Dir.glob(File.join(parent, "*")).each do |path|
       is_dir = FileTest.directory?(path)
@@ -166,6 +169,9 @@ class AddRemoveTab
       iter = file_store.append
       iter[COL_DISPLAY_NAME] = GLib.filename_to_utf8(File.basename(path))
       iter[COL_PATH] = path
+      if is_dir
+        iter[COL_PATH] += "/"
+      end
       iter[COL_IS_DIR] = is_dir
       iter[COL_PIXBUF] = icon
     end

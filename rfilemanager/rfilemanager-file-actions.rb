@@ -1,6 +1,7 @@
 require "gtk3"
 require "gio2"
 require "filemagic"
+require "fileutils"
 require "./rfilemanager-tab"
 
 class FileActions
@@ -38,7 +39,7 @@ class FileActions
     while i < tab.n_pages
       if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
         if i != tab.page
-          tab_obj.fill_store2(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store)
+          tab_obj.fill_store2(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store, true)
         end
       end
     i += 1
@@ -140,4 +141,23 @@ class FileActions
     rename_item.signal_connect("activate"){rename_window(path, tab)}
   end
 
+  def copy_file(tab)
+    @copy_file_list = Array.new
+    # get selected file path
+    tab.get_nth_page(tab.page).child.selected_each do |iconview, path| 
+      iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
+      @copy_file_list.push(iter[0])
+    end
+  end
+
+  def paste_file(tab)
+    tab_obj = AddRemoveTab.new
+    dest = tab.get_nth_page(tab.page).child.parent
+    @copy_file_list.each do |file| 
+      FileUtils.copy(file, dest)
+      tab_obj.fill_store2("#{dest}#{File.basename(file)}", tab.get_nth_page(tab.
+                                                           page).child.
+                                                           file_store, true)
+    end
+  end
 end

@@ -33,9 +33,9 @@ class FileManager
     main_vbox.homogeneous=false
     toolbar_hbox.homogeneous=false
     treeview_vbox.pack_start(@places_treeview)
-    @tab_obj.set_widget(@back_toolbut, @next_toolbut, @file_path_entry, @win, @up_toolbut)
     @tab = Gtk::Notebook.new
     @tab.scrollable = true
+    @tab_obj.set_widget(@back_toolbut, @next_toolbut, @file_path_entry, @win, @up_toolbut)
     @tab_obj.new_tab(@tab, @parent)
     swin_vpaned.pack1(treeview_vbox, :resize => true, :shrink => false)
     swin_vbox = Gtk::Box.new(:vertical, 2)
