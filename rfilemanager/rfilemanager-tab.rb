@@ -2,12 +2,14 @@ require "gtk3"
 require "filemagic"
 require "./rfilemanager-iconview"
 require "./rfilemanager-file-actions"
+require "./rfilemanager-shortcuts"
 
 class AddRemoveTab
 
   COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
 
   def create_variable
+    @shortcut_obj = ShortCuts.new
     @file_actions_obj = FileActions.new
     @file_actions_obj.get_icon_list
   end
@@ -100,6 +102,14 @@ class AddRemoveTab
       # w.drag_get_data(dc, dc.targets[-1], time)
       # target = w.drag_dest_find_target(dc, w.drag_dest_get_target_list())
     end
+    #iconview.enable_model_drag_source(Gdk::Window::ModifierType::BUTTON1_MASK,
+    #                                  TARGET_TABLE,
+    #                                  Gdk::DragContext::Action::COPY|Gdk::DragContext::Action::MOVE)
+    #iconview.enable_model_drag_dest(TARGET_TABLE,
+    #                                 Gdk::DragContext::Action::COPY|Gdk::DragContext::Action::MOVE)
+    accel_group = Gtk::AccelGroup.new
+    @shortcut_obj.create_shortcuts(accel_group, tab)
+    @main_window.add_accel_group(accel_group)
   end
     
   def set_tab_name(tab)
