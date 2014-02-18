@@ -9,34 +9,31 @@ class FileManager
   COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
    
   def initialize
-    @parent = "#{ENV['HOME']}/"
+    parent = "#{ENV['HOME']}/"
     @file_path_entry = Gtk::Entry.new
     @file_actions_obj = FileActions.new
     @tab_obj = AddRemoveTab.new
     @tab_obj.create_variable()
-    @color=Gdk::RGBA::new(18,89,199,0.2)
     @win = Gtk::Window.new
     swin_vpaned = Gtk::Paned.new(:horizontal)
     main_vbox = Gtk::Box.new(:vertical, 2)
     toolbar_hbox = Gtk::Box.new(:horizontal, 0)
+    treeview_vbox = Gtk::Box.new(:vertical, 1)
+    @tab = Gtk::Notebook.new
     menus = create_menubar    
     create_toolbar()
-    @file_path_entry.text = @parent
+    @file_path_entry.text = parent
     main_vbox.pack_start(menus, :expand => false, :fill => false, :padding => 2)
     main_vbox.pack_start(@toolbar, :expand => false, :fill => true, :padding => 2)
-    main_vbox.pack_start(swin_vpaned, :expand => true, :fill => true, :padding => 1)
-    treeview_vbox = Gtk::Box.new(:vertical, 1)
+    main_vbox.pack_start(swin_vpaned, :expand => true, :fill => true, :padding => 1) 
     create_devices_treeview()
     treeview_vbox.pack_start(@devices_treeview, :expand => false, :fill => false, :padding => 2)
     create_places_treeview
     
-    main_vbox.homogeneous=false
-    toolbar_hbox.homogeneous=false
-    treeview_vbox.pack_start(@places_treeview)
-    @tab = Gtk::Notebook.new
+    treeview_vbox.pack_start(@places_treeview) 
     @tab.scrollable = true
     @tab_obj.set_widget(@back_toolbut, @next_toolbut, @file_path_entry, @win, @up_toolbut)
-    @tab_obj.new_tab(@tab, @parent)
+    @tab_obj.new_tab(@tab, parent)
     swin_vpaned.pack1(treeview_vbox, :resize => true, :shrink => false)
     swin_vbox = Gtk::Box.new(:vertical, 2)
     swin_vbox.set_size_request(350, 400)
@@ -54,6 +51,7 @@ class FileManager
   end
 
 def create_places_treeview 
+  color=Gdk::RGBA::new(18, 89, 199, 0.4)
   @places_treeview = Gtk::TreeView.new
   renderer = Gtk::CellRendererText.new
   column   = Gtk::TreeViewColumn.new("PLACES", renderer,  :text => INDEX)
@@ -69,13 +67,14 @@ def create_places_treeview
     end
     iter[INDEX] = key
   end
-  @places_treeview.override_background_color(0, @color)
+  @places_treeview.override_background_color(0, color)
   @places_treeview.signal_connect("cursor-changed"){
                    click_treeview_row(@places_treeview, places_hash,
                                       @devices_treeview)}
 end
 
 def create_devices_treeview
+  color=Gdk::RGBA::new(18, 89, 199, 0.4)
   @devices_treeview = Gtk::TreeView.new
   renderer = Gtk::CellRendererText.new
   column   = Gtk::TreeViewColumn.new("DEVICES", renderer, :text => INDEX)
@@ -87,7 +86,7 @@ def create_devices_treeview
     iter[INDEX] = key
   end
   @devices_treeview.model = store
-  @devices_treeview.override_background_color(0, @color)
+  @devices_treeview.override_background_color(0, color)
 
   @devices_treeview.signal_connect("cursor-changed"){
                     click_treeview_row(@devices_treeview, devices_hash,
@@ -211,7 +210,7 @@ def create_menubar
                                            @tab_obj.new_tab(@tab, path)
                                            @win.show_all
                                          else
-                                           @tab_obj.new_tab(@tab, @parent)
+                                           @tab_obj.new_tab(@tab, "#{ENV['HOME']}/")
                                            @win.show_all
                                          end}
   # newwindow_item.signal_connect("activate"){}
