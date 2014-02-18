@@ -92,7 +92,7 @@ class AddRemoveTab
       check_next_back_buttons(current_page_num, tab)
     end
     accel_group = Gtk::AccelGroup.new
-    @shortcut_obj.create_shortcuts(accel_group, tab)
+    @shortcut_obj.create_shortcuts(accel_group, tab, @main_window)
     @main_window.add_accel_group(accel_group)
     # iconview.drag_dest_set(Gtk::Drag::DestDefaults::ALL,
     #                   [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 98765]],
@@ -151,22 +151,20 @@ class AddRemoveTab
     end
     # set_adress_line()
     if tab.page == -1
-      filestore_update(parent, file_store, true)
+      filestore_update(parent, file_store)
     else
       parent = tab.get_nth_page(tab.page).child.parent    
-      filestore_update(parent, file_store, true)
+      filestore_update(parent, file_store)
       set_tab_name(tab)
     end
   end
 
-  def filestore_update(parent, file_store, clear)
-    if clear
-      file_store.clear
-    end
+  def filestore_update(parent, file_store)
+    o = FileActions.new
     icon_theme = Gtk::IconTheme.default
     Dir.glob(File.join(parent, "*")).each do |path|
       is_dir = FileTest.directory?(path)
-      icon = @file_actions_obj.get_icon(is_dir, path)
+      icon = o.get_icon(is_dir, path)
       iter = file_store.append
       iter[COL_DISPLAY_NAME] = GLib.filename_to_utf8(File.basename(path))
       iter[COL_PATH] = path
@@ -175,7 +173,7 @@ class AddRemoveTab
       end
       iter[COL_IS_DIR] = is_dir
       iter[COL_PIXBUF] = icon
-    end
+    end 
   end
 
   # implements according to file path new or old

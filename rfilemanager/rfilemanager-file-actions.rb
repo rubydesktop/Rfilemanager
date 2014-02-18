@@ -42,7 +42,7 @@ class FileActions
     while i < tab.n_pages
       if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
         if i != tab.page
-          tab_obj.filestore_update(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store, true)
+          tab_obj.filestore_update(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store)
         end
       end
     i += 1
@@ -153,14 +153,13 @@ class FileActions
     end
   end
 
-  def paste_file(tab)
+  def paste_file(tab, main_window)
     tab_obj = AddRemoveTab.new
     dest = tab.get_nth_page(tab.page).child.parent
-    @copy_file_list.each do |file| 
-      FileUtils.copy(file, dest)
-      tab_obj.filestore_update("#{dest}#{File.basename(file)}", tab.get_nth_page(tab.
-                                                           page).child.
-                                                           file_store, true)
+    @copy_file_list.each do |src| 
+      FileUtils.cp_r(src, dest)
     end
+    tab_obj.filestore_update("#{dest}", tab.get_nth_page(tab.page).child.file_store)
+    main_window.show_all
   end
 end
