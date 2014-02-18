@@ -67,7 +67,7 @@ class AddRemoveTab
           iconview.unselect_all
           if @iconview_path != nil
             iconview.select_path(@iconview_path)
-            @file_actions_obj.rightclik_menu(event, @iconview_path, tab) 
+            @file_actions_obj.rightclick_menu(event, @iconview_path, tab) 
             @main_window.show_all
           end
         end

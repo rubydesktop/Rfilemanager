@@ -25,9 +25,12 @@ class FileActions
   # file name changes & display name changes
   def change_file_name(path, tab, rename)
     iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
+    if FileTest.directory?(iter[0])
+      iter[1] += "/"
+    end
     new_file_path = iter[0].chomp(iter[1]) + rename
     File.rename(iter[0], new_file_path)
-    iter[0] = new_file_path
+    iter[0] = new_file_path + "/"
     iter[1] = rename
   end
 
@@ -132,7 +135,7 @@ class FileActions
     @icon_list = @icon_theme.icons
   end
 
-  def rightclik_menu(event, path, tab)
+  def rightclick_menu(event, path, tab)
     menu = Gtk::Menu.new
     menu.append(rename_item = Gtk::MenuItem.new("Rename"))
     menu.show_all
