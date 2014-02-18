@@ -39,7 +39,7 @@ class FileActions
     while i < tab.n_pages
       if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
         if i != tab.page
-          tab_obj.fill_store2(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store, true)
+          tab_obj.filestore_update(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store, true)
         end
       end
     i += 1
@@ -155,7 +155,7 @@ class FileActions
     dest = tab.get_nth_page(tab.page).child.parent
     @copy_file_list.each do |file| 
       FileUtils.copy(file, dest)
-      tab_obj.fill_store2("#{dest}#{File.basename(file)}", tab.get_nth_page(tab.
+      tab_obj.filestore_update("#{dest}#{File.basename(file)}", tab.get_nth_page(tab.
                                                            page).child.
                                                            file_store, true)
     end

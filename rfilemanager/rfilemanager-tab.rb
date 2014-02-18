@@ -30,7 +30,6 @@ class AddRemoveTab
     return swin, hbox, close_but, tab_label
   end
 
-
   def new_tab(tab, parent)
     swin, hbox, close_but, tab_label = create_tab_container(parent)
     file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
@@ -92,6 +91,9 @@ class AddRemoveTab
       @file_path_entry.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
     end
+    accel_group = Gtk::AccelGroup.new
+    @shortcut_obj.create_shortcuts(accel_group, tab)
+    @main_window.add_accel_group(accel_group)
     # iconview.drag_dest_set(Gtk::Drag::DestDefaults::ALL,
     #                   [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 98765]],
     #                  Gdk::DragContext::Action::MOVE)
@@ -110,9 +112,6 @@ class AddRemoveTab
     #                                  Gdk::DragContext::Action::COPY|Gdk::DragContext::Action::MOVE)
     #iconview.enable_model_drag_dest(TARGET_TABLE,
     #                                 Gdk::DragContext::Action::COPY|Gdk::DragContext::Action::MOVE)
-    accel_group = Gtk::AccelGroup.new
-    @shortcut_obj.create_shortcuts(accel_group, tab)
-    @main_window.add_accel_group(accel_group)
   end
     
   def set_tab_name(tab)
@@ -152,15 +151,15 @@ class AddRemoveTab
     end
     # set_adress_line()
     if tab.page == -1
-      fill_store2(parent, file_store, true)
+      filestore_update(parent, file_store, true)
     else
       parent = tab.get_nth_page(tab.page).child.parent    
-      fill_store2(parent, file_store, true)
+      filestore_update(parent, file_store, true)
       set_tab_name(tab)
     end
   end
 
-  def fill_store2(parent, file_store, clear)
+  def filestore_update(parent, file_store, clear)
     if clear
       file_store.clear
     end
