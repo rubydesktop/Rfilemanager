@@ -15,20 +15,26 @@ class AddRemoveTab
     @file_actions_obj.get_icon_list
   end
 
-  # TODO split function
-  def new_tab(tab, parent)
+  def create_tab_container(parent)
     swin =  Gtk::ScrolledWindow.new
     viewport  = Gtk::Viewport.new(swin.hadjustment, swin.vadjustment)
-    file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
-    fill_store(false, parent, tab, file_store)
-
     hbox = Gtk::Box.new(:horizontal)
     close_but = Gtk::Button.new
     image = Gtk::Image.new
-    image.set_from_stock(Gtk::Stock::CLOSE, :menu)  
+    image.set_from_stock(Gtk::Stock::CLOSE, :menu)
     close_but.set_image(image)
     close_but.set_relief(:none)
-    
+    tab_label = Gtk::Label.new(File.basename(parent))
+    hbox.pack_start(tab_label, :expand => true, :fill => true, :padding =>2)
+    hbox.pack_start(close_but, :expand => true, :fill => true, :padding => 2)
+    return swin, hbox, close_but, tab_label
+  end
+
+
+  def new_tab(tab, parent)
+    swin, hbox, close_but, tab_label = create_tab_container(parent)
+    file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
+    fill_store(false, parent, tab, file_store) 
     iconview = RFileManagerIconView.new
     iconview.model = file_store
     iconview.selection_mode = :multiple
@@ -49,7 +55,7 @@ class AddRemoveTab
       end
     end
     swin.add(iconview)
-    
+   
     # iconview x,y coordinate detect
     iconview.signal_connect("motion-notify-event") do |widget, event|
       @iconview_path = iconview.get_path_at_pos(event.x, event.y)
@@ -68,19 +74,15 @@ class AddRemoveTab
         end
       end
     end
-
-    l = Gtk::Label.new(File.basename(parent))
-    hbox.pack_start(l, :expand => true, :fill => true, :padding =>2)
-    hbox.pack_start(close_but, :expand => true, :fill => true, :padding => 2)
     tab.append_page(swin, hbox)
     hbox.show_all
-    # new page propertis
+    # new page properties
     new_page = tab.get_nth_page(tab.n_pages-1)
     new_page.child.parent = parent
     new_page.child.curr_dir = parent
     new_page.child.route.push(parent)
     new_page.child.file_store = file_store
-    new_page.child.label = l
+    new_page.child.label = tab_label
     close_but.signal_connect("clicked"){tab.remove_page(tab.page_num(new_page));
                                         if not tab_available?(tab)
                                           @file_path_entry.text = ""
@@ -90,19 +92,19 @@ class AddRemoveTab
       @file_path_entry.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
     end
-    iconview.drag_dest_set(Gtk::Drag::DestDefaults::ALL,
-                       [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 98765]],
-                      Gdk::DragContext::Action::MOVE)
-    iconview.drag_source_set(Gdk::Window::ModifierType::BUTTON1_MASK,
-                         [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 12885]],
-                         Gdk::DragContext::Action::MOVE)
-    iconview.signal_connect("drag-data-get") do |widget, drag_context, data, info, time|
-      # drag_context.selection
-    end
-    iconview.signal_connect("drag-drop") do |w, dc, x, y, time|
-      # w.drag_get_data(dc, dc.targets[-1], time)
-      # target = w.drag_dest_find_target(dc, w.drag_dest_get_target_list())
-    end
+    # iconview.drag_dest_set(Gtk::Drag::DestDefaults::ALL,
+    #                   [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 98765]],
+    #                  Gdk::DragContext::Action::MOVE)
+    # iconview.drag_source_set(Gdk::Window::ModifierType::BUTTON1_MASK,
+    #                     [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 12885]],
+    #                     Gdk::DragContext::Action::MOVE)
+    # iconview.signal_connect("drag-data-get") do |widget, drag_context, data, info, time|
+    # drag_context.selection
+    #end
+    # iconview.signal_connect("drag-drop") do |w, dc, x, y, time|
+    # w.drag_get_data(dc, dc.targets[-1], time)
+    # target = w.drag_dest_find_target(dc, w.drag_dest_get_target_list())
+    #end
     #iconview.enable_model_drag_source(Gdk::Window::ModifierType::BUTTON1_MASK,
     #                                  TARGET_TABLE,
     #                                  Gdk::DragContext::Action::COPY|Gdk::DragContext::Action::MOVE)
