@@ -87,7 +87,7 @@ class AddRemoveTab
     end
     accel_group = Gtk::AccelGroup.new
     shortcut_obj = ShortCuts.new
-    shortcut_obj.create_shortcuts(accel_group, tab, @main_window)
+    shortcut_obj.create_shortcuts(accel_group, tab, @main_window, file_actions_obj)
     @main_window.add_accel_group(accel_group)
     # iconview.drag_dest_set(Gtk::Drag::DestDefaults::ALL,
     #                   [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 98765]],
@@ -146,19 +146,15 @@ class AddRemoveTab
     end
     # set_adress_line()
     if tab.page == -1
-      filestore_update(parent, file_store)
+      filestore_update(parent, file_store, "recursive")
     else
       parent = tab.get_nth_page(tab.page).child.parent    
-      filestore_update(parent, file_store)
+      filestore_update(parent, file_store, "recursive")
       set_tab_name(tab)
     end
   end
 
-  def filestore_update(parent, file_store)
-    file_icons = FileActions.new
-    file_icons.get_icon_list
-    file_store.clear
-    Dir.glob(File.join(parent, "*")).each do |path|
+  def add_item(file_icons, path, file_store)
       is_dir = FileTest.directory?(path)
       icon = file_icons.get_icon(is_dir, path)
       iter = file_store.append
@@ -169,7 +165,19 @@ class AddRemoveTab
       end
       iter[COL_IS_DIR] = is_dir
       iter[COL_PIXBUF] = icon
-    end 
+  end
+
+  def filestore_update(parent, file_store, status)
+    file_icons = FileActions.new
+    file_icons.get_icon_list
+    if status == "recursive"
+      file_store.clear
+      Dir.glob(File.join(parent, "*")).each do |path|
+        add_item(file_icons, path, file_store)
+      end 
+    else
+      add_item(file_icons, parent, file_store)
+    end
   end
 
   # implements according to file path new or old
