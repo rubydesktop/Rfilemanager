@@ -13,7 +13,6 @@ class FileManager
     @file_path_entry = Gtk::Entry.new
     @file_actions_obj = FileActions.new
     @tab_obj = AddRemoveTab.new
-    @tab_obj.create_variable()
     @win = Gtk::Window.new
     swin_vpaned = Gtk::Paned.new(:horizontal)
     main_vbox = Gtk::Box.new(:vertical, 2)

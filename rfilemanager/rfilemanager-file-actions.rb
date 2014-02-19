@@ -38,7 +38,6 @@ class FileActions
   def update_tabs(tab)
     i = 0
     tab_obj = AddRemoveTab.new
-    tab_obj.create_variable
     while i < tab.n_pages
       if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
         if i != tab.page
@@ -66,6 +65,7 @@ class FileActions
   def rename_window(path, tab)
     is_dir = FileTest.directory?(path)
     iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
+    icon_list = get_icon_list
     icon = get_icon(is_dir, iter[0]) 
     dialog = create_dialog_win("Rename")
     table = Gtk::Table.new(4, 2, false)
