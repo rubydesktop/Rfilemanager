@@ -137,10 +137,10 @@ class FileActions
 
   def tab_rightclick_menu(event, tab)
     menu = Gtk::Menu.new
-    menu.append(paste_item = Gtk::MenuItem.new("Paste"))
-    menu.append(properties_item = Gtk::MenuItem.new("Properties"))
-    menu.append(zoomin_item = Gtk::MenuItem.new("Zoom In"))
-    menu.append(zoomout_item = Gtk::MenuItem.new("Zoom Out"))
+    menu.append(paste_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PASTE))
+    menu.append(properties_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PROPERTIES))
+    menu.append(zoomin_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_IN))
+    menu.append(zoomout_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_OUT))
     menu.show_all
     menu.popup(nil, nil, event.button, event.time)
   end
