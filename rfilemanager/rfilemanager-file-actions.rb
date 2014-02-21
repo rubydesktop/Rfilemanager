@@ -135,13 +135,36 @@ class FileActions
     @icon_list = @icon_theme.icons
   end
 
+  def tab_rightclick_menu(event, tab)
+    menu = Gtk::Menu.new
+    menu.append(paste_item = Gtk::MenuItem.new("Paste"))
+    menu.append(properties_item = Gtk::MenuItem.new("Properties"))
+    menu.append(zoomin_item = Gtk::MenuItem.new("Zoom In"))
+    menu.append(zoomout_item = Gtk::MenuItem.new("Zoom Out"))
+    menu.show_all
+    menu.popup(nil, nil, event.button, event.time)
+  end
+
   def rightclick_menu(event, path, tab)
     menu = Gtk::Menu.new
-    menu.append(rename_item = Gtk::MenuItem.new("Rename"))
+    rename_item = Gtk::ImageMenuItem.new(:label => "Rename")
+    copy_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::COPY)
+    paste_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PASTE)
+    cut_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::CUT)
+    delete_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::DELETE)
+    menu.append(rename_item)
+    menu.append(copy_item)
+    menu.append(paste_item)
+    menu.append(cut_item)
+    menu.append(delete_item)
+    if tab.get_nth_page(tab.page).child.selected_items.length > 1
+      rename_item.sensitive = false
+    end
     menu.show_all
     menu.popup(nil, nil, event.button, event.time)
     # signals
     rename_item.signal_connect("activate"){rename_window(path, tab)}
+    copy_item.signal_connect("activate"){}
   end
 
   def copy_file(tab)

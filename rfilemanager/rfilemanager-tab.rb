@@ -58,11 +58,14 @@ class AddRemoveTab
     iconview.signal_connect("button-press-event") do |widget, event|
       if event.event_type == Gdk::Event::Type::BUTTON_PRESS
         if event.button == 3
-          iconview.unselect_all
           if @iconview_path != nil
+            # secilmeden sadece iconun uzerine mouse geldiyse, otomatik secer
             iconview.select_path(@iconview_path)
             file_actions_obj.rightclick_menu(event, @iconview_path, tab) 
             @main_window.show_all
+          else
+            iconview.unselect_all
+            file_actions_obj.tab_rightclick_menu(event, tab)
           end
         end
       end
@@ -82,7 +85,7 @@ class AddRemoveTab
                                         end
                                        }
     tab.signal_connect("switch-page") do |_, _, current_page_num|
-      @file_path_entry.text = tab.get_nth_page(current_page_num).child.parent
+      @file_path_entry.buffer.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
     end
     accel_group = Gtk::AccelGroup.new
