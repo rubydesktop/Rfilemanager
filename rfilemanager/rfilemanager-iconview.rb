@@ -17,7 +17,5 @@ class RFileManagerIconView < Gtk::IconView
     @label = ""
     @file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
   end
-
-#  signal_new("curr-dir-updated")
 end
 

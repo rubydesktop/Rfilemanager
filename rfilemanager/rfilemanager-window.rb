@@ -1,3 +1,4 @@
+#!/usr/bin/ruby
 require "gtk3"
 require "gio2"
 require "filemagic"

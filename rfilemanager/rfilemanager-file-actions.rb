@@ -6,6 +6,7 @@ require "./rfilemanager-tab"
 
 class FileActions
 
+  ICONSIZE_32, ICONSIZE_48, ICONSIZE_64, ICONSIZE_80 = [32, 48, 64, 80]
   # opens file with default application
   def open_default_application(file)
     system "xdg-open #{file}"
@@ -74,7 +75,7 @@ class FileActions
     rename_entry.select_region(0, -1)
     table.attach_defaults(rename_entry, 1, 2, 0, 1)
     image = Gtk::Image.new
-    image.pixbuf = icon
+    image.pixbuf = icon[0]
     table.attach_defaults(image, 0, 1, 0, 1)
     table.row_spacings = 5
     table.column_spacings = 5
@@ -107,7 +108,7 @@ class FileActions
   
   def get_icon(is_dir, path)
     if is_dir
-      icon = "gnome-fs-directory"
+      icon_name = "gnome-fs-directory"
     else
         mime = FileMagic.mime
         mimetype = mime.file(path)
@@ -115,19 +116,19 @@ class FileActions
         part2 = part1[0].split("/")
         # inappropriate file format
         if not mimetype.include?(";")
-          icon = mimetype.split(" ")
-          part2[1] = icon[0]
+          icon_name = mimetype.split(" ")
+          part2[1] = icon_name[0]
         end
-        icon = @icon_list.grep(/#{part2[1]}/)
-        if icon.class == Array
-          icon = icon[0]
+        icon_name = @icon_list.grep(/#{part2[1]}/)
+        if icon_name.class == Array
+          icon_name = icon_name[0]
         end
-        if icon == nil
-          icon = "gnome-fs-regular"
+        if icon_name == nil
+          icon_name = "gnome-fs-regular"
         end
       end
-    icon = @icon_theme.load_icon(icon, 48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
-    return icon
+    icon = @icon_theme.load_icon(icon_name, ICONSIZE_48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
+    return icon, icon_name
   end
 
   def get_icon_list
@@ -135,14 +136,40 @@ class FileActions
     @icon_list = @icon_theme.icons
   end
 
-  def tab_rightclick_menu(event, tab)
+  def increase_pixbuf?(tab)
+    if tab.get_nth_page(tab.page).child.file_store.iter_first[3].width < ICONSIZE_80
+      return true
+    end
+    return false
+  end
+  
+  def increase_pixbuf_size(tab)
+    icon_theme = Gtk::IconTheme.default
+    if tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_32
+      size = ICONSIZE_48
+    elsif tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_48
+      size = ICONSIZE_64
+    elsif tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_64
+      size = ICONSIZE_80
+    end
+    tab.get_nth_page(tab.page).child.file_store.each do |model, path, iter|
+      iter[3] = icon_theme.load_icon(iter[4], size, Gtk::IconTheme::LookupFlags::FORCE_SVG)
+    end
+  end
+
+  def tab_rightclick_menu(event, tab, window)
     menu = Gtk::Menu.new
     menu.append(paste_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PASTE))
     menu.append(properties_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PROPERTIES))
     menu.append(zoomin_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_IN))
     menu.append(zoomout_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_OUT))
+    if not increase_pixbuf?(tab)
+      zoomin_item.sensitive = false
+    end
+    
     menu.show_all
     menu.popup(nil, nil, event.button, event.time)
+    zoomin_item.signal_connect("activate"){increase_pixbuf_size(tab); window.show_all}
   end
 
   def rightclick_menu(event, path, tab)
@@ -164,7 +191,10 @@ class FileActions
     menu.popup(nil, nil, event.button, event.time)
     # signals
     rename_item.signal_connect("activate"){rename_window(path, tab)}
-    copy_item.signal_connect("activate"){}
+    copy_item.signal_connect("activate"){copy_file(tab)}
+    paste_item.signal_connect("activate"){paste_file(tab)}
+    cut_item.signal_connect("activate"){}
+    delete_item.signal_connect("activate"){}
   end
 
   def copy_file(tab)

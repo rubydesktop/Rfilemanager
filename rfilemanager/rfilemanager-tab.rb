@@ -6,7 +6,7 @@ require "./rfilemanager-shortcuts"
 
 class AddRemoveTab
 
-  COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF = (0..3).to_a
+  COL_PATH, COL_DISPLAY_NAME, COL_IS_DIR, COL_PIXBUF, COL_ICONAME = (0..4).to_a
 
   def create_tab_container(parent)
     swin =  Gtk::ScrolledWindow.new
@@ -25,7 +25,7 @@ class AddRemoveTab
 
   def new_tab(tab, parent)
     swin, hbox, close_but, tab_label = create_tab_container(parent)
-    file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf)
+    file_store = Gtk::ListStore.new(String, String, TrueClass, Gdk::Pixbuf, String)
     fill_store(false, parent, tab, file_store) 
     iconview = RFileManagerIconView.new
     iconview.model = file_store
@@ -65,7 +65,7 @@ class AddRemoveTab
             @main_window.show_all
           else
             iconview.unselect_all
-            file_actions_obj.tab_rightclick_menu(event, tab)
+            file_actions_obj.tab_rightclick_menu(event, tab, @main_window)
           end
         end
       end
@@ -88,28 +88,6 @@ class AddRemoveTab
       @file_path_entry.buffer.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
     end
-    accel_group = Gtk::AccelGroup.new
-    shortcut_obj = ShortCuts.new
-    shortcut_obj.create_shortcuts(accel_group, tab, @main_window, file_actions_obj)
-    @main_window.add_accel_group(accel_group)
-    # iconview.drag_dest_set(Gtk::Drag::DestDefaults::ALL,
-    #                   [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 98765]],
-    #                  Gdk::DragContext::Action::MOVE)
-    # iconview.drag_source_set(Gdk::Window::ModifierType::BUTTON1_MASK,
-    #                     [["test", Gtk::Drag::TargetFlags::OTHER_WIDGET, 12885]],
-    #                     Gdk::DragContext::Action::MOVE)
-    # iconview.signal_connect("drag-data-get") do |widget, drag_context, data, info, time|
-    # drag_context.selection
-    #end
-    # iconview.signal_connect("drag-drop") do |w, dc, x, y, time|
-    # w.drag_get_data(dc, dc.targets[-1], time)
-    # target = w.drag_dest_find_target(dc, w.drag_dest_get_target_list())
-    #end
-    #iconview.enable_model_drag_source(Gdk::Window::ModifierType::BUTTON1_MASK,
-    #                                  TARGET_TABLE,
-    #                                  Gdk::DragContext::Action::COPY|Gdk::DragContext::Action::MOVE)
-    #iconview.enable_model_drag_dest(TARGET_TABLE,
-    #                                 Gdk::DragContext::Action::COPY|Gdk::DragContext::Action::MOVE)
   end
     
   def set_tab_name(tab)
@@ -159,7 +137,7 @@ class AddRemoveTab
 
   def add_item(file_icons, path, file_store)
       is_dir = FileTest.directory?(path)
-      icon = file_icons.get_icon(is_dir, path)
+      icon, icon_name = file_icons.get_icon(is_dir, path)
       iter = file_store.append
       iter[COL_DISPLAY_NAME] = GLib.filename_to_utf8(File.basename(path))
       iter[COL_PATH] = path
@@ -168,6 +146,7 @@ class AddRemoveTab
       end
       iter[COL_IS_DIR] = is_dir
       iter[COL_PIXBUF] = icon
+      iter[COL_ICONAME] = icon_name
   end
 
   def filestore_update(parent, file_store, status)
@@ -179,6 +158,7 @@ class AddRemoveTab
         add_item(file_icons, path, file_store)
       end 
     else
+      # displays parent directory, not recursive
       add_item(file_icons, parent, file_store)
     end
   end
