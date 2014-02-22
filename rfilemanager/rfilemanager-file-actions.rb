@@ -136,23 +136,29 @@ class FileActions
     @icon_list = @icon_theme.icons
   end
 
-  def increase_pixbuf?(tab)
-    if tab.get_nth_page(tab.page).child.file_store.iter_first[3].width < ICONSIZE_80
-      return true
+  def increase_pixbuf?(tab, zoomin_item, zoomout_item)
+    if tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_80
+      zoomin_item.sensitive = false
     end
-    return false
+    if tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_32
+      zoomout_item.sensitive = false
+    end 
+  end
+
+  def decrease_pixbuf_size(tab)
+    icon_theme = Gtk::IconTheme.default
+    size = tab.get_nth_page(tab.page).child.file_store.iter_first[3].width - 16
+    tab.get_nth_page(tab.page).child.file_store.each do |model, path, iter|
+    iter[3] = icon_theme.load_icon(iter[4], size, Gtk::IconTheme::LookupFlags::FORCE_SVG)
+    end
   end
   
   def increase_pixbuf_size(tab)
     icon_theme = Gtk::IconTheme.default
-    if tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_32
-      size = ICONSIZE_48
-    elsif tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_48
-      size = ICONSIZE_64
-    elsif tab.get_nth_page(tab.page).child.file_store.iter_first[3].width == ICONSIZE_64
-      size = ICONSIZE_80
-    end
+    size = tab.get_nth_page(tab.page).child.file_store.iter_first[3].width + 16
     tab.get_nth_page(tab.page).child.file_store.each do |model, path, iter|
+      # iter[3] -> pixbuf_column
+      # iter[4] -> icon name
       iter[3] = icon_theme.load_icon(iter[4], size, Gtk::IconTheme::LookupFlags::FORCE_SVG)
     end
   end
@@ -163,13 +169,11 @@ class FileActions
     menu.append(properties_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PROPERTIES))
     menu.append(zoomin_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_IN))
     menu.append(zoomout_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_OUT))
-    if not increase_pixbuf?(tab)
-      zoomin_item.sensitive = false
-    end
-    
+    increase_pixbuf?(tab, zoomin_item, zoomout_item)
     menu.show_all
     menu.popup(nil, nil, event.button, event.time)
     zoomin_item.signal_connect("activate"){increase_pixbuf_size(tab); window.show_all}
+    zoomout_item.signal_connect("activate"){decrease_pixbuf_size(tab); window.show_all}
   end
 
   def rightclick_menu(event, path, tab)
