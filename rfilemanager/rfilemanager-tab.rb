@@ -33,43 +33,15 @@ class AddRemoveTab
     iconview.text_column = COL_DISPLAY_NAME
     iconview.pixbuf_column = COL_PIXBUF
     mime = FileMagic.mime
-    file_actions_obj = FileActions.new
-    iconview.signal_connect("item_activated") do |_, path|
-      iter = file_store.get_iter(path)
-      if iter[COL_DISPLAY_NAME]
-        if mime.file(iter[COL_PATH]).include?("directory")
-          tab.get_nth_page(tab.page).child.parent = iter[COL_PATH]
-          fill_store("new_path", iter[COL_PATH], tab, file_store)
-          @back_but.sensitive = true
-          @up_but.sensitive = true
-        else
-          file_actions_obj.open_default_application(iter[COL_PATH])
-        end
-      end
-    end
+    @file_actions_obj = FileActions.new
+    iconview.signal_connect("item_activated"){|_, path| clicked_icon(path, mime, tab)}
     swin.add(iconview)
-   
     # iconview x,y coordinate detect
     iconview.signal_connect("motion-notify-event") do |widget, event|
       @iconview_path = iconview.get_path_at_pos(event.x, event.y)
     end
-
     # right click activate
-    iconview.signal_connect("button-press-event") do |widget, event|
-      if event.event_type == Gdk::Event::Type::BUTTON_PRESS
-        if event.button == 3
-          if @iconview_path != nil
-            # secilmeden sadece iconun uzerine mouse geldiyse, otomatik secer
-            iconview.select_path(@iconview_path)
-            file_actions_obj.rightclick_menu(event, @iconview_path, tab) 
-            @main_window.show_all
-          else
-            iconview.unselect_all
-            file_actions_obj.tab_rightclick_menu(event, tab, @main_window)
-          end
-        end
-      end
-    end
+    iconview.signal_connect("button-press-event"){|_, event| select_icon(event, tab)}
     tab.append_page(swin, hbox)
     hbox.show_all
     # new page properties
@@ -79,17 +51,54 @@ class AddRemoveTab
     new_page.child.route.push(parent)
     new_page.child.file_store = file_store
     new_page.child.label = tab_label
-    close_but.signal_connect("clicked"){tab.remove_page(tab.page_num(new_page));
-                                        if not tab_available?(tab)
-                                          @file_path_entry.text = ""
-                                        end
-                                       }
+    close_but.signal_connect("clicked"){close_tab(tab, new_page)}
     tab.signal_connect("switch-page") do |_, _, current_page_num|
       @file_path_entry.buffer.text = tab.get_nth_page(current_page_num).child.parent
       check_next_back_buttons(current_page_num, tab)
     end
+    iconview.focus = true
+    #iconview.signal_connect("key-press-event"){|_, event|}
   end
-    
+
+  def close_tab(tab, new_page)
+    tab.remove_page(tab.page_num(new_page))
+    if not tab_available?(tab)
+      @file_path_entry.text = ""
+    end
+  end
+
+  # when user clicked a icon for display content of directory or file
+  def clicked_icon(path, mime, tab)
+    iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
+    if iter[COL_DISPLAY_NAME]
+      if mime.file(iter[COL_PATH]).include?("directory")
+        tab.get_nth_page(tab.page).child.parent = iter[COL_PATH]
+        fill_store("new_path", iter[COL_PATH], tab,
+                               tab.get_nth_page(tab.page).child.file_store)
+        @back_but.sensitive = true
+        @up_but.sensitive = true
+      else
+        @file_actions_obj.open_default_application(iter[COL_PATH])
+      end
+    end
+  end
+
+  def select_icon(event, tab)
+    if event.event_type == Gdk::Event::Type::BUTTON_PRESS
+      if event.button == 3
+        if @iconview_path != nil
+          # secilmeden sadece iconun uzerine mouse geldiyse, otomatik secer
+          tab.get_nth_page(tab.page).child.select_path(@iconview_path)
+          @file_actions_obj.rightclick_menu(event, @iconview_path, tab) 
+          @main_window.show_all
+        else
+          tab.get_nth_page(tab.page).child.unselect_all
+          @file_actions_obj.tab_rightclick_menu(event, tab, @main_window)
+        end
+      end
+    end
+  end
+
   def set_tab_name(tab)
     # sets file path
     @file_path_entry.text = tab.get_nth_page(tab.page).child.parent
@@ -98,8 +107,8 @@ class AddRemoveTab
     # sets tab name
     tab.get_nth_page(tab.page).child.label.text = file_path
   end
-
-  def check_next_back_buttons(page_num, tab)
+  
+def check_next_back_buttons(page_num, tab)
     if tab.get_nth_page(page_num).child.route.length == 1
       @back_but.sensitive = false
       @next_but.sensitive = false
