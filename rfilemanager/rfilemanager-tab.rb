@@ -46,18 +46,16 @@ class AddRemoveTab
     hbox.show_all
     # new page properties
     new_page = tab.get_nth_page(tab.n_pages-1)
-    new_page.child.parent = parent
-    new_page.child.curr_dir = parent
-    new_page.child.route.push(parent)
-    new_page.child.file_store = file_store
-    new_page.child.label = tab_label
+    set_newpage_prop(new_page, parent, file_store, tab_label)
     close_but.signal_connect("clicked"){close_tab(tab, new_page)}
-    tab.signal_connect("switch-page") do |_, _, current_page_num|
-      @file_path_entry.buffer.text = tab.get_nth_page(current_page_num).child.parent
-      check_next_back_buttons(current_page_num, tab)
-    end
+    tab.signal_connect("switch-page"){|_, _, cur_page_num| set_addressline(cur_page_num, tab)}
     iconview.focus = true
     #iconview.signal_connect("key-press-event"){|_, event|}
+  end
+ 
+  def set_addressline(current_page_num, tab)
+    @file_path_entry.buffer.text = tab.get_nth_page(current_page_num).child.parent
+    check_next_back_buttons(current_page_num, tab)
   end
 
   def close_tab(tab, new_page)
@@ -65,6 +63,14 @@ class AddRemoveTab
     if not tab_available?(tab)
       @file_path_entry.text = ""
     end
+  end
+  
+  def set_newpage_prop(new_page, parent, file_store, tab_label)
+    new_page.child.parent = parent
+    new_page.child.curr_dir = parent
+    new_page.child.route.push(parent)
+    new_page.child.file_store = file_store
+    new_page.child.label = tab_label
   end
 
   # when user clicked a icon for display content of directory or file
@@ -177,7 +183,9 @@ def check_next_back_buttons(page_num, tab)
     i = tab.get_nth_page(tab.page).child.route.index(tab.get_nth_page(tab.page).child.curr_dir)
     if status == "new_path"
       # if path added already
-      if i != nil and tab.get_nth_page(tab.page).child.route[i+1] == tab.get_nth_page(tab.page).child.parent
+      if i != nil and tab.get_nth_page(tab.page).child.route[i-1] == tab.get_nth_page(tab.page).child.parent
+        go_back(i, tab)
+      elsif i != nil and tab.get_nth_page(tab.page).child.route[i+1] == tab.get_nth_page(tab.page).child.parent
         go_next(i, tab)
         return
       # if route changes
@@ -214,7 +222,7 @@ def check_next_back_buttons(page_num, tab)
   def go_next(i, tab)
     @back_but.sensitive = true
     @up_but.sensitive = true
-    if i+2 == tab.get_nth_page(tab.page).child.route.length
+    if i + 2 == tab.get_nth_page(tab.page).child.route.length
       @next_but.sensitive = false
     end
     tab.get_nth_page(tab.page).child.parent = tab.get_nth_page(tab.page).child.route[i+1]
@@ -238,7 +246,7 @@ def check_next_back_buttons(page_num, tab)
     parent = tab.get_nth_page(tab.page).child.parent
     parent = parent.chomp(basename + "/")
     tab.get_nth_page(tab.page).child.parent = parent
-    fill_store("new_path", parent, tab, tab.get_nth_page(tab.page).child.file_store)
+    fill_store("new_path", tab.get_nth_page(tab.page).child.parent, tab, tab.get_nth_page(tab.page).child.file_store)
     if parent == "/"
       @up_but.sensitive = false
     end
