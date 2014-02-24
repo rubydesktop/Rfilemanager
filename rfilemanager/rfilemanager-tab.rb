@@ -53,12 +53,30 @@ class AddRemoveTab
     new_page = tab.get_nth_page(tab.n_pages-1)
     set_newpage_prop(new_page, parent, file_store, tab_label)
     close_but.signal_connect("clicked"){close_tab(tab, new_page)}
-    tab.signal_connect("switch-page"){|_, _, cur_page_num| set_addressline(cur_page_num, tab)}
+    tab.signal_connect("switch-page"){|_, _, num| set_addressline(num, tab);}
     iconview.focus = true
-    #iconview.signal_connect("key-press-event"){|_, event|}
+    iconview.signal_connect("key-press-event"){|_, event| on_key_press(event, tab)}
   end
  
+  def on_key_press(event, tab)
+    keyname = Gdk::Keyval.to_name(event.keyval)
+    ctrl = event.state & Gdk::Window::ModifierType::CONTROL_MASK
+    if ctrl == Gdk::Window::ModifierType::CONTROL_MASK
+      # casecmp for ignore case, ctrl+c || ctrl+C
+      if keyname.casecmp("C") == 0
+        @file_actions_obj.copy_file(tab)
+      elsif keyname.casecmp("X") == 0
+      elsif keyname.casecmp("V") == 0
+        @file_actions_obj.paste_file(tab, @main_window)
+      elsif keyname.casecmp("A") == 0 
+      end
+    end
+  end
+
   def set_addressline(current_page_num, tab)
+    # set focus as current iconview for shortcuts
+    tab.get_nth_page(current_page_num).child.focus = true
+    # set adress line
     @file_path_entry.buffer.text = tab.get_nth_page(current_page_num).child.parent
     check_next_back_buttons(current_page_num, tab)
   end

@@ -193,30 +193,53 @@ class FileActions
     # signals
     rename_item.signal_connect("activate"){rename_window(path, tab)}
     copy_item.signal_connect("activate"){copy_file(tab)}
-    paste_item.signal_connect("activate"){paste_file(tab)}
+    paste_item.signal_connect("activate"){paste_file(tab); main_window.show_all}
     cut_item.signal_connect("activate"){}
     delete_item.signal_connect("activate"){delete_file(tab); window.show_all}
   end
 
   def copy_file(tab)
-    @copy_file_list = Array.new
+    @copy_iter_list = Array.new
     # get selected file path
     tab.get_nth_page(tab.page).child.selected_each do |iconview, path| 
       iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
-      @copy_file_list.push(iter[0])
+      @copy_iter_list.push(iter)
     end
   end
 
-  def paste_file(tab, main_window)
-    tab_obj = AddRemoveTab.new
+  def paste_file(tab)
+    if @copy_iter_list.length == 0
+      return
+    end
     dest = tab.get_nth_page(tab.page).child.parent
-    @copy_file_list.each do |src| 
-      FileUtils.cp_r(src, dest)
-      tab_obj.filestore_update("#{dest}#{File.basename(src)}", tab.get_nth_page(tab.page).child.file_store, nil)
-    main_window.show_all
+    @copy_iter_list.each_with_index do |iter, index|
+      # FileUtils.cp_r(iter[0], dest)
+      add_iter(tab, tab.page, index)
+    end
+    i = 0
+    # update other tabs
+    while i < tab.n_pages
+      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).
+                                             child.parent && i != tab.page
+        @copy_iter_list.each_with_index do |iter, index|
+          add_iter(tab, i, index) 
+        end
+      end
+      i += 1
     end
   end
 
+  # add iter to list store
+  def add_iter(tab, i, index)
+    iter = tab.get_nth_page(i).child.file_store.append
+    iter[0] = @copy_iter_list[index][0]
+    iter[1] = @copy_iter_list[index][1]
+    iter[2] = @copy_iter_list[index][2]
+    iter[3] = @copy_iter_list[index][3]
+    iter[4] = @copy_iter_list[index][4]
+  end
+ 
+  # remove iter from list store & update main window
   def remove_update(tab, path)
     i = 0
     while i < tab.n_pages
