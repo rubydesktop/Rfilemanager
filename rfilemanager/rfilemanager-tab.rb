@@ -42,6 +42,11 @@ class AddRemoveTab
     end
     # right click activate
     iconview.signal_connect("button-press-event"){|_, event| select_icon(event, tab)}
+    if tab.page == -1
+      tab.show_tabs = false
+    else
+      tab.show_tabs = true
+    end
     tab.append_page(swin, hbox)
     hbox.show_all
     # new page properties
@@ -60,8 +65,8 @@ class AddRemoveTab
 
   def close_tab(tab, new_page)
     tab.remove_page(tab.page_num(new_page))
-    if not tab_available?(tab)
-      @file_path_entry.text = ""
+    if tab.n_pages == 1
+      tab.show_tabs = false
     end
   end
   
@@ -95,7 +100,7 @@ class AddRemoveTab
         if @iconview_path != nil
           # secilmeden sadece iconun uzerine mouse geldiyse, otomatik secer
           tab.get_nth_page(tab.page).child.select_path(@iconview_path)
-          @file_actions_obj.rightclick_menu(event, @iconview_path, tab, @main_window) 
+          @file_actions_obj.icon_rightclick_menu(event, @iconview_path, tab, @main_window) 
           @main_window.show_all
         else
           tab.get_nth_page(tab.page).child.unselect_all

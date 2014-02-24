@@ -178,7 +178,7 @@ class FileActions
     # delete_item.signal_connect("activate"){delete_file(tab); window.show_all;}
   end
 
-  def rightclick_menu(event, path, tab, window)
+  def icon_rightclick_menu(event, path, tab, window)
     menu = Gtk::Menu.new 
     menu.append(rename_item = Gtk::ImageMenuItem.new(:label => "Rename"))
     menu.append(copy_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::COPY))
