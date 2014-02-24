@@ -95,7 +95,7 @@ class AddRemoveTab
         if @iconview_path != nil
           # secilmeden sadece iconun uzerine mouse geldiyse, otomatik secer
           tab.get_nth_page(tab.page).child.select_path(@iconview_path)
-          @file_actions_obj.rightclick_menu(event, @iconview_path, tab) 
+          @file_actions_obj.rightclick_menu(event, @iconview_path, tab, @main_window) 
           @main_window.show_all
         else
           tab.get_nth_page(tab.page).child.unselect_all
@@ -114,7 +114,7 @@ class AddRemoveTab
     tab.get_nth_page(tab.page).child.label.text = file_path
   end
   
-def check_next_back_buttons(page_num, tab)
+  def check_next_back_buttons(page_num, tab)
     if tab.get_nth_page(page_num).child.route.length == 1
       @back_but.sensitive = false
       @next_but.sensitive = false
@@ -150,6 +150,11 @@ def check_next_back_buttons(page_num, tab)
     end
   end
 
+  def remove_item(tab, iter)
+    tab.get_nth_page(tab.page).child.file_store.remove(iter)
+  end
+
+  # adds icon to iconview
   def add_item(file_icons, path, file_store)
       is_dir = FileTest.directory?(path)
       icon, icon_name = file_icons.get_icon(is_dir, path)

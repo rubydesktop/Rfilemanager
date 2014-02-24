@@ -35,20 +35,6 @@ class FileActions
     iter[1] = rename
   end
 
-  # if occurs any change in any tab, updates other tabs
-  def update_tabs(tab)
-    i = 0
-    tab_obj = AddRemoveTab.new
-    while i < tab.n_pages
-      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
-        if i != tab.page
-          tab_obj.filestore_update(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store, "recursive")
-        end
-      end
-    i += 1
-    end
-  end
-
   def create_error_msg_win(msg)
      error_msg_win = Gtk::MessageDialog.new(:parent => nil, :flags => :modal,
                :type => :error, :buttons_type => :close, :message => msg)
@@ -169,25 +155,22 @@ class FileActions
     menu.append(properties_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PROPERTIES))
     menu.append(zoomin_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_IN))
     menu.append(zoomout_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::ZOOM_OUT))
+    # menu.append(delete_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::DELETE))
     increase_pixbuf?(tab, zoomin_item, zoomout_item)
     menu.show_all
     menu.popup(nil, nil, event.button, event.time)
     zoomin_item.signal_connect("activate"){increase_pixbuf_size(tab); window.show_all}
     zoomout_item.signal_connect("activate"){decrease_pixbuf_size(tab); window.show_all}
+    # delete_item.signal_connect("activate"){delete_file(tab); window.show_all;}
   end
 
-  def rightclick_menu(event, path, tab)
-    menu = Gtk::Menu.new
-    rename_item = Gtk::ImageMenuItem.new(:label => "Rename")
-    copy_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::COPY)
-    paste_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PASTE)
-    cut_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::CUT)
-    delete_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::DELETE)
-    menu.append(rename_item)
-    menu.append(copy_item)
-    menu.append(paste_item)
-    menu.append(cut_item)
-    menu.append(delete_item)
+  def rightclick_menu(event, path, tab, window)
+    menu = Gtk::Menu.new 
+    menu.append(rename_item = Gtk::ImageMenuItem.new(:label => "Rename"))
+    menu.append(copy_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::COPY))
+    menu.append(paste_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::PASTE))
+    menu.append(cut_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::CUT))
+    menu.append(delete_item = Gtk::ImageMenuItem.new(:stock_id => Gtk::Stock::DELETE))
     if tab.get_nth_page(tab.page).child.selected_items.length > 1
       rename_item.sensitive = false
     end
@@ -198,7 +181,7 @@ class FileActions
     copy_item.signal_connect("activate"){copy_file(tab)}
     paste_item.signal_connect("activate"){paste_file(tab)}
     cut_item.signal_connect("activate"){}
-    delete_item.signal_connect("activate"){}
+    delete_item.signal_connect("activate"){delete_file(tab); window.show_all}
   end
 
   def copy_file(tab)
@@ -217,6 +200,54 @@ class FileActions
       FileUtils.cp_r(src, dest)
       tab_obj.filestore_update("#{dest}#{File.basename(src)}", tab.get_nth_page(tab.page).child.file_store, nil)
     main_window.show_all
+    end
+  end
+=begin
+  # if occurs any change in any tab, updates other tabs
+  def update_tabs(tab, items, status)
+    i = 0
+    tab_obj = AddRemoveTab.new
+    while i < tab.n_pages
+      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
+        if status == "add-item"
+          items.each do |index|
+            tab_obj.filestore_update(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store, "")
+          end
+        elsif status == "remove-item"
+          items.each do |iter|
+            tab_obj.remove_item(tab, iter)
+          end
+        end
+      end
+    i += 1
+    end
+  end
+=end
+  def remove_update(tab, path)
+    i = 0
+    while i < tab.n_pages
+      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
+        iter = tab.get_nth_page(i).child.file_store.get_iter(path)
+        tab.get_nth_page(i).child.file_store.remove(iter)
+      end
+      i += 1
+    end
+  end
+
+  def delete_file(tab)
+    # get selected items
+    items = tab.get_nth_page(tab.page).child.selected_items
+    while items.length != 0
+     iter = tab.get_nth_page(tab.page).child.file_store.get_iter(items[0]) 
+     # delete file or dir
+     if FileTest.directory?(iter[0])
+       FileUtils.rm_rf(iter[0])
+     else
+       FileUtils.rm(iter[0]) 
+     end
+     remove_update(tab, items[0])
+     # update selected item path list
+     items = tab.get_nth_page(tab.page).child.selected_items
     end
   end
 end
