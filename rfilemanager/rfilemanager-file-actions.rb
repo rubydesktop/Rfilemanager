@@ -28,11 +28,26 @@ class FileActions
     iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
     if FileTest.directory?(iter[0])
       iter[1] += "/"
+      new_file_path = iter[0].chomp(iter[1]) + rename + "/"
+    else
+      new_file_path = iter[0].chomp(iter[1]) + rename
     end
-    new_file_path = iter[0].chomp(iter[1]) + rename
     File.rename(iter[0], new_file_path)
-    iter[0] = new_file_path + "/"
+    iter[0] = new_file_path
     iter[1] = rename
+    rename_update(tab, path, new_file_path, rename)
+  end
+ 
+  def rename_update(tab, path, new_file_path, rename)
+    i = 0
+    while i < tab.n_pages
+      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
+        iter = tab.get_nth_page(i).child.file_store.get_iter(path)
+        iter[0] = new_file_path
+        iter[1] = rename
+      end
+      i += 1
+    end
   end
 
   def create_error_msg_win(msg)
@@ -52,8 +67,8 @@ class FileActions
   def rename_window(path, tab)
     is_dir = FileTest.directory?(path)
     iter = tab.get_nth_page(tab.page).child.file_store.get_iter(path)
-    icon_list = get_icon_list
-    icon = get_icon(is_dir, iter[0]) 
+    icon_theme = Gtk::IconTheme.default
+    icon = icon_theme.load_icon(iter[4], ICONSIZE_48, Gtk::IconTheme::LookupFlags::FORCE_SVG)
     dialog = create_dialog_win("Rename")
     table = Gtk::Table.new(4, 2, false)
     rename_entry = Gtk::Entry.new
@@ -61,7 +76,7 @@ class FileActions
     rename_entry.select_region(0, -1)
     table.attach_defaults(rename_entry, 1, 2, 0, 1)
     image = Gtk::Image.new
-    image.pixbuf = icon[0]
+    image.pixbuf = icon
     table.attach_defaults(image, 0, 1, 0, 1)
     table.row_spacings = 5
     table.column_spacings = 5
@@ -84,7 +99,6 @@ class FileActions
           return
         end
         change_file_name(path, tab, rename_entry.text)
-        update_tabs(tab)
         dialog.destroy
       else
         dialog.destroy
@@ -202,27 +216,7 @@ class FileActions
     main_window.show_all
     end
   end
-=begin
-  # if occurs any change in any tab, updates other tabs
-  def update_tabs(tab, items, status)
-    i = 0
-    tab_obj = AddRemoveTab.new
-    while i < tab.n_pages
-      if tab.get_nth_page(i).child.parent == tab.get_nth_page(tab.page).child.parent
-        if status == "add-item"
-          items.each do |index|
-            tab_obj.filestore_update(tab.get_nth_page(i).child.parent, tab.get_nth_page(i).child.file_store, "")
-          end
-        elsif status == "remove-item"
-          items.each do |iter|
-            tab_obj.remove_item(tab, iter)
-          end
-        end
-      end
-    i += 1
-    end
-  end
-=end
+
   def remove_update(tab, path)
     i = 0
     while i < tab.n_pages
