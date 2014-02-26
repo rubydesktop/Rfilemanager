@@ -2,7 +2,6 @@ require "gtk3"
 require "filemagic"
 require "./rfilemanager-iconview"
 require "./rfilemanager-file-actions"
-require "./rfilemanager-shortcuts"
 
 class AddRemoveTab
 
@@ -67,7 +66,8 @@ class AddRemoveTab
         @file_actions_obj.copy_file(tab)
       elsif keyname.casecmp("X") == 0
       elsif keyname.casecmp("V") == 0
-        @file_actions_obj.paste_file(tab, @main_window)
+        @file_actions_obj.paste_file(tab)
+        @main_window.show_all
       elsif keyname.casecmp("A") == 0 
       end
     end
